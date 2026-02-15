@@ -11,16 +11,18 @@ import argparse
 import re
 from pathlib import Path
 from pipeman import DataPipelineContext, Config
+from typing import List
+from types import ModuleType
 
 
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-ROOT_DIR = ...
-STAGES_DIR = Path("stages")
-STORAGE_DIR = Path("storage")
-BACKUP_DIR = Path("_backup_storage")
-CONFIG_FILE = Path("config.yaml")
+ROOT_DIR    = ROOT_DIR / Path(__file__).resolve().parent
+STAGES_DIR  = ROOT_DIR / Path("stages")
+STORAGE_DIR = ROOT_DIR / Path("storage")
+BACKUP_DIR  = ROOT_DIR / Path("_backup_storage")
+CONFIG_FILE = ROOT_DIR / Path("config.yaml")
 
 # ----------------------------------------------------------------------
 # Stage discovery and helpers
