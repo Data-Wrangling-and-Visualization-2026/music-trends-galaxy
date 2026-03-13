@@ -2,6 +2,7 @@ from fastapi import APIRouter, Response
 from app.config import DATA_DIR, CHUNKS_DIR
 from app.utils.file_handlers import read_msgpack_file
 import json
+import msgpack
 
 router = APIRouter(prefix="/init", tags=["Initialization"])
 
