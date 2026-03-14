@@ -75,7 +75,11 @@ songs = [
     (3, "Like a Rolling Stone", json.dumps(["Bob Dylan"]), "Highway 61 Revisited", "album_789",
      "Once upon a time you dressed so fine...")
 ]
-cursor.executemany("INSERT INTO songs VALUES (?,?,?,?,?,?)", songs)
+# Idempotent: same ids on every container start (bind-mounted data volume)
+cursor.executemany(
+    "INSERT OR REPLACE INTO songs VALUES (?,?,?,?,?,?)",
+    songs,
+)
 conn.commit()
 conn.close()
 
