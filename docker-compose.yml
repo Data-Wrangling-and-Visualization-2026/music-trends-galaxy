@@ -1,0 +1,56 @@
+services:
+  database:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: music_trends
+      POSTGRES_USER: music_trends_db
+      POSTGRES_PASSWORD: music_trends_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./storage:/storage:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U music_trends_db -d music_trends"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+
+  backend:
+    build:
+      context: ./music-trends-galaxy/backend
+      dockerfile: Dockerfile
+    container_name: starpoint-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./music-trends-galaxy/backend/data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./music-trends-galaxy/frontend
+      dockerfile: Dockerfile
+    container_name: music_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data: {}
