@@ -172,7 +172,7 @@ def genius_get_lyric(artist: str, track: str) -> LyricEntry:
     )
 
 
-class GeniusLyricsProvider(BaseParser):
+class GeniusParser(BaseParser):
     """
     Lyrics provider implementation that scrapes Genius web pages.
     """
