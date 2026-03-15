@@ -3,7 +3,6 @@ from typing import List
 
 
 class SongListItem(BaseModel):
-    """Краткая карточка трека для списков (без текста песни)."""
 
     model_config = ConfigDict(from_attributes=True)
 
