@@ -2,7 +2,9 @@ import bs4
 import requests
 import functools as fnt
 from urllib.parse import urljoin
-from typing import List
+from typing import List, Optional
+
+from .base import BaseParser
 from .types import LyricEntry, SongEntry
 
 ## utility
@@ -99,8 +101,13 @@ def genius_search_song(artist: str, track: str) -> List['SongEntry']:
 
 def genius_get_lyric(artist: str, track: str) -> LyricEntry:
     """
-    Fetch the lyrics container for a given artist and track from Genius.
-    Returns a BeautifulSoup Tag object representing the lyrics root element.
+    Fetch and parse lyrics for a given artist and track from Genius.
+
+    Returns a `LyricEntry` with:
+    - matched_name / matched_artist set from the chosen Genius result
+    - lyrics filled with cleaned plain text
+    - lyrics_source="genius"
+    - raw_response containing minimal metadata about the chosen entry
     """
     base_url = 'https://genius.com/'
     
@@ -135,13 +142,108 @@ def genius_get_lyric(artist: str, track: str) -> LyricEntry:
     if isinstance(lyrics_root, bs4.element.ResultSet):
         lyrics_root = lyrics_root[0]
 
+    
+
     lyrics_root = lyrics_root.find_all('div', class_='Lyrics__Container-sc-d7157b20-1 Mfmpf')
     for lyric_entry in lyrics_root:
+        # cleanup trash
         for trash in lyric_entry.find_all('div', class_='LyricsHeader__Container-sc-2ca6447a-1 cgxMBK'):
+            trash.decompose()
+        for trash in lyric_entry.find_all('div', class_='LyricsHeader__Container-sc-34356fc0-1 nNOxg'):
             trash.decompose()
     
     text = '\n'.join(get_text_with_linebreaks(i) for i in lyrics_root)
     text = genius_cleanup(text)
 
-    return LyricEntry(name=entry.name, artist=entry.artis, lyrics=text, src='genius')
+    return LyricEntry(
+        matched_name=entry.name,
+        matched_album=None,
+        matched_artist=entry.artis,
+        lyrics=text,
+        lyrics_instrumental=False,
+        lyrics_source="genius",
+        raw_response={
+            "provider": "genius",
+            "artist_names": entry.artis,
+            "full_title": entry.name,
+            "path": entry.path,
+            "url": url,
+        },
+    )
 
+
+class GeniusLyricsProvider(BaseParser):
+    """
+    Lyrics provider implementation that scrapes Genius web pages.
+    """
+
+    def search(
+        self,
+        *,
+        track_name: str | None = None,
+        artist_name: str | None = None,
+        album_name: str | None = None,  # unused for Genius
+        q: str | None = None,  # unused for now
+    ) -> List[LyricEntry]:
+        # Genius search is based on "artist - track" free text.
+        artist = artist_name or ""
+        track = track_name or ""
+
+        # If a generic query is provided, prefer it.
+        if q:
+            artist = ""
+            track = q
+
+        song_entries = genius_search_song(artist, track)
+
+        results: List[LyricEntry] = []
+        for s in song_entries:
+            results.append(
+                LyricEntry(
+                    matched_name=s.name,
+                    matched_album=None,
+                    matched_artist=s.artis,
+                    lyrics=None,  # lyrics are only fetched in get_lyrics
+                    lyrics_instrumental=None,
+                    lyrics_source="genius",
+                    raw_response={
+                        "provider": "genius",
+                        "artist_names": s.artis,
+                        "full_title": s.name,
+                        "path": s.path,
+                    },
+                )
+            )
+
+        return results
+
+    def get_by_signature(
+        self,
+        *,
+        track_name: str,
+        artist_name: str,
+        album_name: str | None = None,
+        duration: float | None = None,
+    ) -> Optional[LyricEntry]:
+        """
+        For Genius we approximate an "exact" match by taking the first search hit.
+        """
+        candidates = self.search(
+            track_name=track_name,
+            artist_name=artist_name,
+            album_name=album_name,
+        )
+        return candidates[0] if candidates else None
+
+    def get_lyrics(
+        self,
+        *,
+        track_name: str,
+        artist_name: str,
+        album_name: str | None = None,
+        duration: float | None = None,
+    ) -> LyricEntry:
+        """
+        Resolve lyrics by directly hitting Genius and parsing the lyrics page.
+        """
+        return genius_get_lyric(artist_name, track_name)
