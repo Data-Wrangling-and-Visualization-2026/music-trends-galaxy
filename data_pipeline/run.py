@@ -18,7 +18,7 @@ from types import ModuleType
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-ROOT_DIR    = ROOT_DIR / Path(__file__).resolve().parent
+ROOT_DIR    = Path(__file__).resolve().parent
 STAGES_DIR  = ROOT_DIR / Path("stages")
 STORAGE_DIR = ROOT_DIR / Path("storage")
 BACKUP_DIR  = ROOT_DIR / Path("_backup_storage")
@@ -211,7 +211,7 @@ def cmd_run(args) -> None:
             sys.exit(1)
     
     # Read config 
-    config = Config(str(CONFIG_FILE.resolve(())))
+    config = Config(path=str(CONFIG_FILE.resolve()))
 
     # Run each stage in order
     for path in stage_paths:
