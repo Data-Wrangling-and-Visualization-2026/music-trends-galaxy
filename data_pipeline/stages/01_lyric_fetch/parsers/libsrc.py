@@ -61,6 +61,8 @@ class LRCLibParser(BaseParser):
     """
 
     BASE_URL = "https://lrclib.net/api"
+    session: requests.Session
+    timeout: int
 
     def __init__(self, timeout: int = 15):
         self.timeout = timeout
