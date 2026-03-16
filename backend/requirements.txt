@@ -5,3 +5,4 @@ msgpack
 aiofiles
 python-multipart
 pillow
+pandas
