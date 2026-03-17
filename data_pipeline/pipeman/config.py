@@ -1,3 +1,10 @@
+"""
+Configuration module for the pipeline manager.
+
+Provides a read-only Config class for loading and accessing YAML-based configuration data.
+Supports initialization from a file path or a dictionary.
+"""
+
 from typing import Any
 import yaml
 

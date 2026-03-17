@@ -1,3 +1,10 @@
+"""
+Data pipeline context module.
+
+Defines the DataPipelineContext class, which encapsulates stage-specific information,
+configuration access, and utility methods for file path management in a data pipeline.
+"""
+
 from .config import Config
 import re
 from pathlib import Path

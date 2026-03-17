@@ -1,3 +1,10 @@
+"""
+Setup script for the pipeman package.
+
+Configures the package for installation, including dependencies, entry points,
+and metadata for the pipeline manager tool.
+"""
+
 from setuptools import setup, find_packages
 
 setup(
