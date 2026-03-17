@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Pipeline runner for stage-based data processing.
+
+This script provides a command-line interface to discover, list, and execute data pipeline stages.
+Stages are organized in subdirectories under 'stages/', each containing a 'main.py' file with a 'main' function.
+The runner supports running individual stages, ranges of stages, listing stages, clearing storage, and copying input data.
 """
 
 import os
@@ -193,8 +197,14 @@ def cmd_list(args) -> None:
 
 def cmd_run(args) -> None:
     """
-    Run one or more stages.
-    Usage: run.py run [stage ids/names]   or   run.py run first-second
+    Execute one or more pipeline stages based on provided identifiers or a range.
+
+    Supports running stages by ID, name, or full folder name, or a range like '01-04'.
+    Resolves identifiers to stage paths, loads configuration, and runs each stage's 'main' function
+    with a DataPipelineContext. Exits on errors during resolution or execution.
+
+    Args:
+        args: Namespace with 'identifiers' list (stage IDs/names or a single range string).
     """
     if len(args.identifiers) == 1 and "-" in args.identifiers[0]:
         # Range syntax
@@ -234,7 +244,12 @@ def cmd_run(args) -> None:
 
 
 def cmd_help(args):
-    """Display help message."""
+    """
+    Display the help message with available commands and their usage.
+
+    Prints a formatted help text explaining each command, including syntax for running stages,
+    listing, clearing storage, and copying input data.
+    """
     help_text = """
 Pipeline runner commands:
   run [stage ids/names]       Run the specified stages.
@@ -250,8 +265,14 @@ Pipeline runner commands:
 
 def cmd_clear(args):
     """
-    Clear storage folder(s) and move contents to backup.
-    Usage: clear all   or   clear [stage ids/names]
+    Clear storage directories by moving contents to backup locations.
+
+    For 'all', moves all contents from STORAGE_DIR to BACKUP_DIR (clearing backup first).
+    For a specific stage, moves contents from the stage's storage subfolder to a corresponding
+    backup subfolder. Creates backup directories as needed.
+
+    Args:
+        args: Namespace with 'target' ('all' or a stage identifier).
     """
     if args.target == "all":
         # Clear entire storage
@@ -294,8 +315,11 @@ def cmd_clear(args):
 
 def cmd_copy_input(args):
     """
-    Copy input data specified in config.yaml to storage/input/.
-    Expects config.yaml to have an 'input' key that is a list of paths (files/directories).
+    Copy input data files/directories from paths specified in config.yaml to storage/input/.
+
+    Reads the 'input' key from CONFIG_FILE (expected as a list of paths). Copies each item
+    to the input storage directory, preserving file/directory structure. Requires PyYAML.
+    Warns on missing paths and exits on errors.
     """
     if not CONFIG_FILE.exists():
         print(f"Config file {CONFIG_FILE} not found.")
@@ -343,6 +367,14 @@ def cmd_copy_input(args):
 # Main CLI
 # ----------------------------------------------------------------------
 def main():
+    """
+    Main entry point for the pipeline runner CLI.
+
+    Parses command-line arguments to determine the command (e.g., 'run', 'list') and its arguments.
+    Dispatches to the appropriate command function. Exits with usage message if no command is provided
+    or if an unknown command is given.
+    """
+
     parser = argparse.ArgumentParser(description="Pipeline runner", add_help=False)
     parser.add_argument("command", nargs="?", help="Command to execute")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Arguments for the command")
