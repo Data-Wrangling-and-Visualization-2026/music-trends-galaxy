@@ -55,7 +55,8 @@ def main(cxt=None):
     parser.add_argument("--text-col", default="lyrics", help="Text column for embeddings")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Sentence-transformers model")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
-    parser.add_argument("--limit", type=int, default=None, help="Max rows (for testing)")
+    parser.add_argument("--limit", type=int, default=None, help="Max rows to process (default: prompt or 1000)")
+    parser.add_argument("--no-prompt", action="store_true", help="Skip interactive limit prompt")
     parser.add_argument("--deep-min-cluster", type=int, default=DEFAULT_DEEP_MIN_CLUSTER)
     parser.add_argument("--deep-min-samples", type=int, default=DEFAULT_DEEP_MIN_SAMPLES)
     parser.add_argument("--wide-min-cluster", type=int, default=DEFAULT_WIDE_MIN_CLUSTER)
@@ -63,8 +64,26 @@ def main(cxt=None):
     parser.add_argument("--perplexity", type=int, default=DEFAULT_PERPLEXITY)
     parser.add_argument("--random-state", type=int, default=DEFAULT_RANDOM_STATE)
     parser.add_argument("--keep-intermediate", action="store_true", help="Keep .npy and .pkl files")
-    # Allow run.py to pass context without breaking on unknown args
     args, _ = parser.parse_known_args()
+
+    # Limit: from run.py --limit, env PIPELINE_LIMIT, or interactive prompt
+    limit = args.limit
+    if limit is None and cxt is not None and hasattr(cxt, "limit") and cxt.limit is not None:
+        limit = cxt.limit
+    if limit is None:
+        limit = __import__("os").environ.get("PIPELINE_LIMIT")
+        limit = int(limit) if limit and limit.isdigit() else None
+    if limit is None and not args.no_prompt and sys.stdin.isatty():
+        prompt = "Max tracks to process (0=all, default 1000): "
+        try:
+            inp = input(prompt).strip() or "1000"
+            limit = 0 if inp == "0" else max(1, int(inp))
+        except (ValueError, EOFError):
+            limit = 1000
+    if limit is None:
+        limit = 1000
+    args.limit = limit
+    print(f"Processing {'all' if limit == 0 else limit} tracks.", flush=True)
 
     input_csv = args.input.resolve()
     output_csv = args.output.resolve()

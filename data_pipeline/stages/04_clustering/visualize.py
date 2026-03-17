@@ -33,9 +33,9 @@ def main():
         print(f"Error: file not found: {args.input_embeddings}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Loading embeddings from {args.input_embeddings}...")
+    print(f"Loading embeddings from {args.input_embeddings}...", flush=True)
     embeddings = np.load(args.input_embeddings)
-    print(f"Embeddings shape: {embeddings.shape}")
+    print(f"Embeddings shape: {embeddings.shape}", flush=True)
 
     if args.sample_size is not None and len(embeddings) > args.sample_size:
         print(f"Using random subsample of {args.sample_size} rows for faster t-SNE.")
@@ -47,8 +47,11 @@ def main():
         embeddings_sample = embeddings
         use_subset = False
 
-    print("Running t-SNE...")
-    tsne = TSNE(n_components=2, perplexity=args.perplexity, random_state=args.random_state, verbose=1)
+    perplexity = min(args.perplexity, len(embeddings_sample) - 1) if len(embeddings_sample) < args.perplexity + 1 else args.perplexity
+    if perplexity < 5:
+        perplexity = 5
+    print(f"Running t-SNE (perplexity={perplexity})...", flush=True)
+    tsne = TSNE(n_components=2, perplexity=perplexity, random_state=args.random_state, verbose=1)
     coords = tsne.fit_transform(embeddings_sample)
     print("t-SNE done.")
 
