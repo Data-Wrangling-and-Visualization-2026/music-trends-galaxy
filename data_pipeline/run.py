@@ -95,6 +95,7 @@ def get_stage_description(stage_path) -> None | str:
     On any error, return None.
     """
     try:
+        sys.path.insert(0, str(stage_path))
         module = load_module_from_path(stage_path / "main.py")
         if hasattr(module, "desc") and callable(module.desc):
             return module.desc()
@@ -102,6 +103,8 @@ def get_stage_description(stage_path) -> None | str:
             return None
     except Exception:
         return None
+    finally:
+        sys.path.pop(0)
 
 
 def load_module_from_path(filepath) -> ModuleType:
@@ -119,10 +122,14 @@ def run_stage(stage_path, context) -> None:
     """
     Import main.py from stage_path, call main(context).
     """
-    module = load_module_from_path(stage_path / "main.py")
-    if not hasattr(module, "main") or not callable(module.main):
-        raise AttributeError(f"Stage {stage_path.name} does not have a callable main() function.")
-    module.main(context)
+    sys.path.insert(0, str(stage_path))
+    try:
+        module = load_module_from_path(stage_path / "main.py")
+        if not hasattr(module, "main") or not callable(module.main):
+            raise AttributeError(f"Stage {stage_path.name} does not have a callable main() function.")
+        module.main(context)
+    finally:
+        sys.path.pop(0)
 
 
 def parse_range(range_str) -> List[str]:
