@@ -32,29 +32,28 @@ def main():
         print(f"Error: file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Loading data from {args.input}...")
-    df = pd.read_csv(args.input)
+    print(f"Loading data from {args.input}...", flush=True)
+    df = pd.read_csv(args.input, nrows=args.limit if args.limit else None)
     if args.limit:
-        df = df.head(args.limit)
+        print(f"Limited to {len(df)} rows.", flush=True)
 
     if args.text_column not in df.columns:
         print(f"Column '{args.text_column}' not found. Available: {list(df.columns)}", file=sys.stderr)
         sys.exit(1)
 
     texts = df[args.text_column].fillna("").astype(str).tolist()
-    print(f"Total rows: {len(texts)}")
+    print(f"Total rows: {len(texts)}", flush=True)
 
-    print(f"Loading model {args.model}...")
+    print(f"Loading model {args.model} (first run may download ~90MB)...", flush=True)
     model = SentenceTransformer(args.model)
-
-    print("Generating embeddings...")
+    print("Model loaded. Generating embeddings...", flush=True)
     embeddings = []
     for i in tqdm(range(0, len(texts), args.batch_size)):
         batch = texts[i:i+args.batch_size]
         emb = model.encode(batch, show_progress_bar=False)
         embeddings.append(emb)
     embeddings = np.vstack(embeddings)
-    print(f"Embeddings shape: {embeddings.shape}")
+    print(f"Embeddings shape: {embeddings.shape}", flush=True)
 
     args.output_embeddings.parent.mkdir(parents=True, exist_ok=True)
     np.save(args.output_embeddings, embeddings)
