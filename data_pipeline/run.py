@@ -22,11 +22,12 @@ from types import ModuleType
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-ROOT_DIR    = Path(__file__).resolve().parent
-STAGES_DIR  = ROOT_DIR / Path("stages")
-STORAGE_DIR = ROOT_DIR / Path("storage")
-BACKUP_DIR  = ROOT_DIR / Path("_backup_storage")
-CONFIG_FILE = ROOT_DIR / Path("config.yaml")
+ROOT_DIR    = Path(__file__).resolve().parent  # data_pipeline/
+STAGES_DIR  = ROOT_DIR / "stages"
+# Project root storage (matches Docker ./storage mount for frontend)
+STORAGE_DIR = (ROOT_DIR / ".." / "storage").resolve()
+BACKUP_DIR  = (ROOT_DIR / ".." / "_backup_storage").resolve()
+CONFIG_FILE = ROOT_DIR / "config.yaml"
 
 # ----------------------------------------------------------------------
 # Stage discovery and helpers

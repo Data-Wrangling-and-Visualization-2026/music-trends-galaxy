@@ -1,5 +1,6 @@
 export_folder: export
-storage_folder: storage
+# Project root storage (same as Docker mount ./storage) for frontend embeded_data.csv
+storage_folder: ../storage
 
 02_album_fetch:
   ouput_folder_name: covers
