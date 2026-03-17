@@ -45,8 +45,7 @@ def main(cxt=None):
         input_csv = storage / "preproccessed.csv"
         output_csv = storage / "embeded_data.csv"
     else:
-        pipeline_root = Path(__file__).resolve().parents[2]
-        storage = pipeline_root / "storage"
+        storage = (Path(__file__).resolve().parents[3] / "storage").resolve()
         input_csv = storage / "preproccessed.csv"
         output_csv = storage / "embeded_data.csv"
 

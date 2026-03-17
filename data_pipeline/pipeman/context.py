@@ -65,12 +65,11 @@ class DataPipelineContext:
         self.stage_name = stage_name
 
         self.root_dir = Path(root_dir)
-        
         self.global_config = config
         self.local_config = self.global_config.get(self.folder_name)
 
-        self.EXPORT_PATH  = root_dir / config.get('export_folder')
-        self.STORAGE_PATH = root_dir / config.get('storage_folder')
+        self.EXPORT_PATH = (self.root_dir / config.get('export_folder')).resolve()
+        self.STORAGE_PATH = (self.root_dir / config.get('storage_folder')).resolve()
 
         # Ensure created
         self.EXPORT_PATH.mkdir(exist_ok=True)
