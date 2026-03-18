@@ -1,3 +1,10 @@
+"""
+Data pipeline context module.
+
+Defines the DataPipelineContext class, which encapsulates stage-specific information,
+configuration access, and utility methods for file path management in a data pipeline.
+"""
+
 from .config import Config
 import re
 from pathlib import Path
@@ -50,7 +57,7 @@ class DataPipelineContext:
     local_config: Config
 
     @property
-    def folder_name(self) -> str: return f'{self.stage_id}_{self.stage_name}'
+    def folder_name(self) -> str: return f'{self.stage_id:02d}_{self.stage_name}'
 
     def __init__(self, root_dir: str, current_folder: str, config: Config):
         stage_id, stage_name = parse_folder_name(current_folder)
@@ -60,7 +67,7 @@ class DataPipelineContext:
         self.root_dir = Path(root_dir)
         
         self.global_config = config
-        self.local_config = self.global_config[self.folder_name]
+        self.local_config = self.global_config.get(self.folder_name)
 
     def get(self, key: str) -> Any:
         '''
