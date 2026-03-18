@@ -10,8 +10,6 @@ import re
 from pathlib import Path
 from typing import Any, Tuple
 
-STORAGE_PATH = 'storage'
-
 def parse_folder_name(name: str) -> Tuple[int, str]:
     """
     Parse a line in the format 'id_name' and return a tuple (id, name).
@@ -47,6 +45,8 @@ class DataPipelineContext:
     '''
     Context that is given for running instance of the stage
     '''
+    STORAGE_PATH: Path = 'storage'
+    EXPORT_PATH: Path = 'export'
 
     stage_id: int
     stage_name: str
@@ -69,11 +69,30 @@ class DataPipelineContext:
         self.global_config = config
         self.local_config = self.global_config.get(self.folder_name)
 
+        self.EXPORT_PATH  = root_dir / config.get('export_folder')
+        self.STORAGE_PATH = root_dir / config.get('storage_folder')
+
+        # Ensure created
+        self.EXPORT_PATH.mkdir(exist_ok=True)
+        self.STORAGE_PATH.mkdir(exist_ok=True)
+
     def get(self, key: str) -> Any:
         '''
         Returns value from the config section related to the current stage
         '''
         return self.local_config.get(key)
+    
+    def get_export_dir(self) -> Path:
+        '''
+        Returns path of the folder where all ouput is located
+        '''
+        return self.EXPORT_PATH
+    
+    def get_storage_dir(self) -> Path:
+        '''
+        Returns path of the folder where all ouput is located
+        '''
+        return self.STORAGE_PATH
     
     def get_global(self, key: str) -> Any:
         '''
@@ -81,30 +100,11 @@ class DataPipelineContext:
         '''
         return self.global_config.get(key)
     
-    def get_data_prefix(self) -> str:
-        '''
-        Get file prefix for the current stage's storage
-        '''
-        return f'{self.stage_id}_'
-    
-    def get_previous_data_prefix(self) -> str:
-        '''
-        Get file prefix for the previous stage's storage
-        '''
-        return f'{max(self.stage_id-1, 0)}_'
+    def get_file_path_from_stage(self, stage_id: int, filename: str) -> Path:
+        path = self.STORAGE_PATH / f'{stage_id:02d}' 
+        path.mkdir(exist_ok=True)
+
+        return path / filename
     
     def get_file_path(self, filename: str) -> Path:
-        '''
-        Returns file path in stage space by given filename
-        '''
-        name = self.get_data_prefix() + filename
-
-        return (self.root_dir / STORAGE_PATH / name).resolve()
-    
-    def get_last_stage_file_path(self, filename: str) -> Path:
-        '''
-        Returns file path in previous stage space by given filename
-        '''
-        name = self.get_data_prefix() + filename
-
-        return (self.root_dir / STORAGE_PATH / name).resolve()
+        return self.get_file_path_from_stage(self.stage_id, filename)
