@@ -39,4 +39,44 @@ Chunk is a collection of the points. It is stored in the `msgpack` format.
 - **Description**: (put description here) 
 - **Response:** msgpack file
 
+---
+
+### Runtime API
+
+#### Album cover data
+- **Endpoint**: `GET /api/cover/{id}.jpeg`
+- **Description**: Возвращает изображение обложки альбома в формате JPEG. Идентификатор `{id}` соответствует уникальному коду обложки (например, идентификатору альбома).
+- **Response**: `image/jpeg`
+
+**Пример запроса:**
+```
+GET /api/cover/ab-12345.jpeg
+```
+
+**Пример ответа:**  
+(бинарные данные изображения)
+
+#### Get song info
+- **Endpoint**: `GET /api/song/{id}`
+- **Description**: Возвращает подробную информацию о песне по её уникальному идентификатору.
+- **Response**: `application/json`
+
+**Пример запроса:**
+```
+GET /api/song/98765
+```
+
+**Пример ответа:**
+```json
+{
+  "name": "Bohemian Rhapsody",
+  "artists": ["Queen"],
+  "album": "A Night at the Opera",
+  "album_id": "album_123",
+  "lyrics": "Is this the real life? Is this just fantasy?..."
+}
+```
 ## Frontend
+Route: `/map`
+The forntend will be map-like page of some star clusters.
+The all frontend code will be located in the folder `frontend` 
