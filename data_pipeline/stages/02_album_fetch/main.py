@@ -1,17 +1,18 @@
 from fetchers import *
 from pipeman import DataPipelineContext
+from pathlib import Path
 import pandas as pd
 import ast
-from cover_bd import AlbumCoverDB
+from data_db import AlbumCoverDB
 
-import os
-
-folder = 'folder'
-
-# os.mkdir(folder)
+image_output_folder: Path = None
 
 def main(cxt: DataPipelineContext) -> None:
-    db = AlbumCoverDB("db.db")
+    global image_output_folder
+    image_output_folder = cxt.get_file_path(cxt.get('ouput_folder_name'))
+    image_output_folder.mkdir(exist_ok=True) # Try to create foldere
+
+    db = AlbumCoverDB(cxt.get_file_path('album_covers.db'))
 
     df = pd.read_csv(r'storage/tracks_features.csv')
     albums = df[["album_id", "album", "artists", "artist_ids"]].drop_duplicates().reset_index(drop=True)
@@ -22,17 +23,31 @@ def main(cxt: DataPipelineContext) -> None:
     f = GeniusFetcher()
 
     for i, r in albums.iterrows():
+        print('\n'*2)
         try:
             album, artist = r["album"], ast.literal_eval(r["artists"])[0]
             print(f"#{i}) \tProcessing {artist} - {album}")
             
-            s = f.find_cover(artist, album)
+            s = f.find_cover(artist, album, album_id=r["album_id"])
         except Exception as e:
+            db.save_failed(AlbumCover(
+                album_id=r["album_id"],
+                album_name=r["album"],
+                artists=ast.literal_eval(r["artists"]),
+                image_path=None,
+                image=None,
+                image_source=None,
+                additional_info={}
+            ))
             print(f"Error processing {artist} - {album}: {e}")
             continue
+        
+        print('Saving:', s)
+        db.save(s)
+        output = image_output_folder / f"{s.album_id}.jpg"
 
-        db.insert_or_replace(s)
-        s.image.save(f"{folder}/{s.album_id}.jpg")
+        s.image.convert('RGB').save(output)
+        print('Saved to:', output)
 
         if i > 100:
             break

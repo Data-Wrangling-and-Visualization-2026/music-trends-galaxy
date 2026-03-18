@@ -75,7 +75,7 @@ class GeniusFetcher(BaseFetcher):
         response.raise_for_status()
         return Image.open(BytesIO(response.content))
     
-    def find_cover(self, artist: str, album: str) -> AlbumCover:
+    def find_cover(self, artist: str, album: str, album_id: Optional[str] = None) -> AlbumCover:
         search_results = self._search(artist, album)
         if not search_results:
             raise RuntimeError(f"No results found for query: {artist} - {album}")
@@ -84,7 +84,7 @@ class GeniusFetcher(BaseFetcher):
         image = self._fetch_image(best_result.image_path)
         
         return AlbumCover(
-            album_id       =       None,
+            album_id       =       album_id,
             album_name     =       best_result.album_name,
             artists        =       best_result.artists,
             image_path     =       best_result.image_path,
