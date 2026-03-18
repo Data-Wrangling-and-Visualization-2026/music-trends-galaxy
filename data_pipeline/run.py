@@ -268,11 +268,8 @@ def cmd_clear(args):
     Clear storage directories by moving contents to backup locations.
 
     For 'all', moves all contents from STORAGE_DIR to BACKUP_DIR (clearing backup first).
-    For a specific stage, moves contents from the stage's storage subfolder to a corresponding
-    backup subfolder. Creates backup directories as needed.
-
-    Args:
-        args: Namespace with 'target' ('all' or a stage identifier).
+    For a specific stage, accepts ONLY a two-digit numeric stage id (e.g. '01') and moves
+    contents from the stage's storage subfolder to a corresponding backup subfolder.
     """
     if args.target == "all":
         # Clear entire storage
@@ -288,17 +285,31 @@ def cmd_clear(args):
         move_contents(STORAGE_DIR, BACKUP_DIR)
         print(f"Moved all contents from {STORAGE_DIR} to {BACKUP_DIR}.")
     else:
-        # Clear specific stage(s)
-        try:
-            stage_paths = resolve_stage_identifiers([args.target])
-        except ValueError as e:
-            print(f"Error: {e}")
+        # Only accept two-digit numeric ids (e.g., '01', '02')
+        if not re.match(r"^\d{2}$", args.target):
+            print("Error: 'clear' accepts only two-digit stage ids (e.g., 01).")
             sys.exit(1)
 
-        stage_path = stage_paths[0]  # only one
+        # Resolve by numeric id using discover_stages()
+        stages = discover_stages()
+        matching = None
+        for s in stages:
+            if s["id"] == args.target:
+                matching = s
+                break
+
+        if matching is None:
+            print(f"Error: Stage id '{args.target}' not found.")
+            sys.exit(1)
+
+        stage_path = matching["path"]
         stage_name = stage_path.name
-        src = STORAGE_DIR / stage_name
-        dst = BACKUP_DIR / stage_name
+
+        # Prefer storage/<id> (e.g., storage/02); if that doesn't exist, fall back to storage/<full_stage_folder>
+        candidate_by_id = STORAGE_DIR / args.target
+
+        src = candidate_by_id
+        dst = BACKUP_DIR / args.target
 
         if not src.exists():
             print(f"Storage subfolder {src} does not exist. Nothing to clear.")
