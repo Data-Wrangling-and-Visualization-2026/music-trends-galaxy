@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+const COORD_SCALE = 2.0;
+
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v))
 }
@@ -129,6 +131,12 @@ export default function GalaxyScatter() {
       }
       const data = await res.json()
       pointsRef.current = data.points || []
+      const scaledPoints = data.points.map(p => ({
+        ...p,
+        x: p.x * COORD_SCALE,
+        y: p.y * COORD_SCALE
+      }));
+      pointsRef.current = scaledPoints;
       boundsRef.current = computeBounds(pointsRef.current)
       setMeta({
         count: data.count,
@@ -152,80 +160,66 @@ export default function GalaxyScatter() {
   }, [loadPoints])
 
   const draw = useCallback(() => {
-    const canvas = canvasRef.current
-    const points = pointsRef.current
-    const bounds = boundsRef.current
-    if (!canvas || !bounds || points.length === 0) return
-
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    const w = Math.max(1, Math.floor(rect.width * dpr))
-    const h = Math.max(1, Math.floor(rect.height * dpr))
+    const canvas = canvasRef.current;
+    const points = pointsRef.current;
+    const bounds = boundsRef.current;
+    if (!canvas || !bounds || points.length === 0) return;
+  
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.floor(rect.width * dpr));
+    const h = Math.max(1, Math.floor(rect.height * dpr));
     if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w
-      canvas.height = h
+      canvas.width = w;
+      canvas.height = h;
     }
-
-    const ctx = canvas.getContext('2d')
-    const { scale, tx, ty } = transformRef.current
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.fillStyle = '#030308'
-    ctx.fillRect(0, 0, w, h)
-
-    if (points.length === 0) return
-
-    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, tx * dpr, ty * dpr)
-    ctx.globalCompositeOperation = 'lighter'
-    ctx.globalAlpha = 1
-
+  
+    const ctx = canvas.getContext('2d');
+    const { scale, tx, ty } = transformRef.current;
+  
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#030308';
+    ctx.fillRect(0, 0, w, h);
+  
+    if (points.length === 0) return;
+  
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, tx * dpr, ty * dpr);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.6;
+  
+    const zoomRadiusFactor = Math.min(1, 8 / scale); // при scale > 8 радиус уменьшается
+  
     for (const p of points) {
-      const { r, g, b } = starColor(p.x, p.y, bounds, p.lyrical_intensity, p.id)
-      const br = 0.55 + hash01(p.id + 'o') * 1.15 + (1 - p.lyrical_intensity) * 0.35
-      const core = `rgba(${r},${g},${b},0.92)`
-      const halo = `rgba(${Math.min(255, r + 40)},${Math.min(255, g + 30)},${Math.min(255, b + 55)},0.22)`
-
-      ctx.beginPath()
-      ctx.fillStyle = halo
-      ctx.arc(p.x, p.y, br * 2.8, 0, Math.PI * 2)
-      ctx.fill()
-
-      ctx.beginPath()
-      ctx.fillStyle = core
-      ctx.arc(p.x, p.y, br * 0.55, 0, Math.PI * 2)
-      ctx.fill()
+      const { r, g, b } = starColor(p.x, p.y, bounds, p.lyrical_intensity, p.id);
+      const baseSize = 0.38;
+      const randomFactor = hash01(p.id + 'o') * 0.65;
+      const intensityFactor = (1 - p.lyrical_intensity) * 0.2;
+      let br = baseSize + randomFactor + intensityFactor;
+      br = br * (0.5 + zoomRadiusFactor * 0.8); // уменьшаем при зуме
+      br = Math.min(1.2, br); // ограничиваем максимум
+  
+      const core = `rgba(${r},${g},${b},0.92)`;
+      const halo = `rgba(${Math.min(255, r + 30)},${Math.min(255, g + 20)},${Math.min(255, b + 40)},0.18)`;
+  
+      // гало (свет)
+      ctx.beginPath();
+      ctx.fillStyle = halo;
+      ctx.arc(p.x, p.y, br * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+  
+      // ядро (твёрдая часть)
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = core;
+      ctx.arc(p.x, p.y, br * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+  
+      // снова включаем свечение для следующих точек
+      ctx.globalCompositeOperation = 'lighter';
     }
-
-    ctx.globalCompositeOperation = 'source-over'
-    ctx.globalAlpha = 1
-  }, [])
-
-  useEffect(() => {
-    if (status !== 'ready') return
-    const canvas = canvasRef.current
-    const container = containerRef.current
-    if (!canvas || !container) return
-
-    const bounds = boundsRef.current
-    const rect = canvas.getBoundingClientRect()
-    transformRef.current = initialTransform(rect.width, rect.height, bounds)
-    setHudZoom(String(Math.round(transformRef.current.scale * 100)))
-
-    draw()
-
-    const ro = new ResizeObserver(() => {
-      const c = canvasRef.current
-      const b = boundsRef.current
-      if (c && b && pointsRef.current.length > 0) {
-        const r = c.getBoundingClientRect()
-        transformRef.current = initialTransform(r.width, r.height, b)
-        setHudZoom(String(Math.round(transformRef.current.scale * 100)))
-      }
-      draw()
-    })
-    ro.observe(container)
-    return () => ro.disconnect()
-  }, [status, draw])
+  
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }, []);
 
   const screenToData = (sx, sy) => {
     const canvas = canvasRef.current
@@ -290,7 +284,7 @@ export default function GalaxyScatter() {
   }
 
   return (
-    <div className="galaxy-wrap galaxy-wrap--compact" ref={containerRef}>
+    <div className="galaxy-wrap" ref={containerRef}>
       <div className="galaxy-hud">
         <div className="galaxy-hud-title">Galaxy map</div>
         {meta && (

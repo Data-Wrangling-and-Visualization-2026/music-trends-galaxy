@@ -9,9 +9,12 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
-  min-height: 100vh;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 a {
@@ -49,10 +52,8 @@ a:hover {
 
 .main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1.25rem;
-  min-height: 0;
+  overflow: hidden;
+  padding: 0;
 }
 
 .panel {
@@ -153,11 +154,12 @@ code {
 
 /* ----- Full-bleed galaxy map (/map) ----- */
 .map-page {
-  margin: -1.5rem -1.25rem;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  margin: 0;
+  padding: 0;
 }
 
 .galaxy-wrap {
@@ -165,7 +167,8 @@ code {
   flex: 1;
   min-height: 0;
   background: #030308;
-  border-top: 1px solid #252a36;
+  width: 100%;
+  height: 100%;
 }
 
 /* Smaller map area: all points stay in view at once after Fit; good for small datasets */
@@ -183,7 +186,6 @@ code {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 240px;
   cursor: grab;
   touch-action: none;
 }
