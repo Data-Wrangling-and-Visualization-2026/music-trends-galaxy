@@ -60,4 +60,4 @@ class GalaxyTrackListItem(BaseModel):
 class GalaxyTracksResponse(BaseModel):
     tracks: List[GalaxyTrackListItem]
     count: int
-    source_csv: str
+    source_csv: str  # path or "sqlite" when from DB
