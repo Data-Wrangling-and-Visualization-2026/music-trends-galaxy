@@ -14,7 +14,6 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
 }
 
 a {
@@ -52,7 +51,8 @@ a:hover {
 
 .main {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
 }
 
@@ -160,6 +160,10 @@ code {
   flex-direction: column;
   margin: 0;
   padding: 0;
+}
+
+.main:has(.map-page) {
+  overflow-y: hidden;
 }
 
 .galaxy-wrap {
@@ -333,4 +337,345 @@ code {
 .galaxy-xy {
   font-family: ui-monospace, monospace;
   font-size: 0.82em;
+}
+
+
+.home-page {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.hero {
+  position: relative;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(ellipse at 20% 30%, #0a0c15, #030308);
+  overflow: hidden;
+}
+
+.hero-content {
+  max-width: 800px;
+  padding: 2rem;
+  z-index: 2;
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #fff, #8ab4ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: #b0b8d0;
+  margin-bottom: 2rem;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.75rem 1.8rem;
+  border-radius: 40px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6e8eff, #8a4eff);
+  color: white;
+  box-shadow: 0 4px 15px rgba(110, 142, 255, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(110, 142, 255, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #e8e8ec;
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.hero-glow {
+  position: absolute;
+  top: 20%;
+  left: 10%;
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(110,142,255,0.2), transparent 70%);
+  filter: blur(60px);
+  z-index: 1;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 2rem;
+  padding: 3rem 2rem;
+  background: #0b0e16;
+}
+
+.stats-card {
+  text-align: center;
+  background: #12161f;
+  padding: 1.5rem 2rem;
+  border-radius: 24px;
+  min-width: 150px;
+  backdrop-filter: blur(4px);
+  border: 1px solid #252a36;
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  border-color: #6e8eff;
+}
+
+.stats-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, #8ab4ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.stats-label {
+  font-size: 0.9rem;
+  color: #9aa3b5;
+  margin-top: 0.5rem;
+}
+
+.pipeline {
+  padding: 4rem 2rem;
+  background: #030308;
+}
+
+.pipeline h2 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 3rem;
+  background: linear-gradient(135deg, #fff, #8ab4ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pipeline-card {
+  background: #0f121b;
+  border-radius: 24px;
+  padding: 1.8rem;
+  border: 1px solid #252a36;
+  transition: all 0.3s;
+}
+
+.pipeline-card:hover {
+  transform: translateY(-5px);
+  border-color: #6e8eff;
+  box-shadow: 0 10px 25px -10px rgba(110,142,255,0.2);
+}
+
+.pipeline-card h3 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+
+.pipeline-card p {
+  color: #b0b8d0;
+  line-height: 1.5;
+}
+
+.map-description {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2rem;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #0a0c15, #030308);
+}
+
+.map-description-text {
+  flex: 1;
+  min-width: 280px;
+}
+
+.map-description-text h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.map-description-text p {
+  color: #b0b8d0;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.map-description-preview {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.preview-placeholder {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 0.8;
+  background: radial-gradient(circle at center, #1a1f2b, #0a0c15);
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 3rem;
+  border: 1px solid #2a3142;
+  box-shadow: 0 0 30px rgba(110,142,255,0.1);
+  backdrop-filter: blur(4px);
+  text-align: center;
+  color: #8ab4ff;
+}
+
+.sample-tracks {
+  padding: 4rem 2rem;
+  background: #0b0e16;
+  text-align: center;
+}
+
+.sample-tracks h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #fff, #8ab4ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.sample-tracks .song-list {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  text-align: left;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Data Pipeline Page */
+.pipeline-page {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  background: #0b0e16;
+  min-height: 100%;
+}
+
+.pipeline-page h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #fff, #8ab4ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-align: center;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+  color: #8ab4ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.pipeline-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.step {
+  background: #12151c;
+  border-radius: 24px;
+  padding: 1.5rem;
+  border: 1px solid #252a36;
+}
+
+.step h2 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #c8d0e4;
+}
+
+.step p, .step ul {
+  color: #b0b8d0;
+  line-height: 1.5;
+}
+
+.step ul {
+  padding-left: 1.5rem;
+}
+
+.step li {
+  margin: 0.5rem 0;
+}
+
+.step code {
+  background: #1a1f2b;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+}
+
+.pipeline-intro {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  color: #b0b8d0;
+  font-size: 1.1rem;
+}
+.pipeline-cta {
+  text-align: center;
 }
