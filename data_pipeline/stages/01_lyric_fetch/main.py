@@ -12,7 +12,7 @@ import tqdm
 def contains_artist(artists_str):
     """
     Parse the artists string and return True if any artist in the list
-    (case‑insensitive) matches one of the target artists.
+    (case-insensitive) matches one of the target artists.
     Handles NaN/None values by returning False.
     """
     target_artists = ["linkin park", "bad omens", "radiohead", "slipknot", "bring me the horizon", "architecs", "evanescence", "korn", "limp bizkit", "asking alexandria", "panchiko", "afi", "amira elfeky", "violent vira", "cloudyfield", "muse", 'ally nicholas' ,'paramore', 'i see starts', 'tool', 'bones', 'sleep token', 'jutes', 'too close to touch', 'health', 'system of a down', 'alice in chains', 'deftones', 'audioslave', 'aurora', 'holding absence', 'my chemical romance', 'papa roach', 'the plot in you', 'skillet', 'spiritbox', 'thousand foot krutch', 'three days grace', 'while she sleeps', 'wilt', 'казённый унитаз', 'дора']
@@ -26,23 +26,23 @@ def contains_artist(artists_str):
         # If parsing fails, treat as no match
         return False
  
-    # Convert each artist to lower case for case‑insensitive comparison
+    # Convert each artist to lower case for case-insensitive comparison
     artist_list_lower = [a.lower() for a in artist_list]
  
     # Check if any target artist is present
     return any(target in artist_list_lower for target in target_artists)
  
  
-
-# Глобальные счётчики
+ 
+# Global counters
 lock = threading.Lock()
 total_succeed = 0
 total_failed = 0
-next_report_threshold = 30  # для вывода прогресса каждые 3000 строк
-next_report_threshold_step = 30  # для вывода прогресса каждые 3000 строк
+next_report_threshold = 30  # for reporting progress every 3000 rows
+next_report_threshold_step = 30  # for reporting progress every 3000 rows
 
 def process_lyrics(db_path: str, df: pd.DataFrame, thid: int):
-    """Обрабатывает свою часть DataFrame, обновляет глобальные счётчики."""
+    """Processes its part of the DataFrame, updates global counters."""
     db = LyricDatabase(db_path)
     parser = ChainParser(parser_types=get_all_parsers())
     counter = 0
@@ -63,17 +63,17 @@ def process_lyrics(db_path: str, df: pd.DataFrame, thid: int):
         except Exception:
             failed += 1
 
-        # Каждые 1000 строк синхронизируем счётчики
-        if counter % (next_report_threshold//3) == 0:
+        # Every (next_report_threshold // 3 rows, synchronize counters
+        if counter % (next_report_threshold // 3) == 0:
             _update_global_and_report(succeed, failed)
             succeed, failed = 0, 0
 
-    # Остатки (менее 1000 строк)
+    # Remainders (less than (next_report_threshold // 3 rows)
     if succeed > 0 or failed > 0:
         _update_global_and_report(succeed, failed)
 
 def _update_global_and_report(succeed_inc: int, failed_inc: int):
-    """Безопасно увеличивает глобальные счётчики и выводит прогресс."""
+    """Safely increments global counters and prints progress."""
     global total_succeed, total_failed, next_report_threshold
     with lock:
         total_succeed += succeed_inc
@@ -81,7 +81,7 @@ def _update_global_and_report(succeed_inc: int, failed_inc: int):
         total_processed = total_succeed + total_failed
 
         if total_processed >= next_report_threshold:
-            print(f"Обработано {total_processed} строк (успешно: {total_succeed}, ошибок: {total_failed})")
+            print(f"Processed {total_processed} rows (successful: {total_succeed}, errors: {total_failed})")
             while next_report_threshold <= total_processed:
                 next_report_threshold += next_report_threshold_step 
 
@@ -97,7 +97,7 @@ def main(cxt: DataPipelineContext) -> None:
     df = df[df['id'].apply(lambda x: not db.exists(x))]
     # df = df[df['artists'].apply(contains_artist)]
 
-    # Количество потоков (по числу CPU)
+    # Number of threads (based on CPU count)
     num_threads = os.cpu_count() or 6
     num_threads //= 2
     n = len(df)
@@ -105,10 +105,10 @@ def main(cxt: DataPipelineContext) -> None:
     print('Loaded df, rows:', len(df), ',\tCPUs:', num_threads)
 
     if n == 0:
-        print("DataFrame пуст, нечего обрабатывать")
+        print("DataFrame is empty, nothing to process")
         return
 
-    # Разбиваем DataFrame на примерно равные части (последняя может быть меньше)
+    # Split DataFrame into roughly equal parts (last one may be smaller)
     chunk_size = n // num_threads
     remainder = n % num_threads
     df_parts = []
@@ -120,7 +120,7 @@ def main(cxt: DataPipelineContext) -> None:
 
     print('Starting threads')
 
-    # Запускаем потоки
+    # Start threads
     threads = []
     for i, part in enumerate(df_parts):
         if part.empty:
@@ -129,11 +129,11 @@ def main(cxt: DataPipelineContext) -> None:
         t.start()
         threads.append(t)
 
-    # Ждём завершения
+    # Wait for completion
     for t in threads:
         t.join()
 
-    # Финальный отчёт
+    # Final report
     with lock:
         total = total_succeed + total_failed
-        print(f"\nОбработка завершена. Всего строк: {total}, успешно: {total_succeed}, ошибок: {total_failed}")
+        print(f"\nProcessing completed. Total rows: {total}, successful: {total_succeed}, errors: {total_failed}")
