@@ -16,8 +16,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_PIPELINE_ROOT = Path(__file__).resolve().parents[3]
-_DEFAULT_STORAGE = _PIPELINE_ROOT / "storage"
+# Project root storage (matches Docker ./storage for frontend)
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]  # music-trends-galaxy/
+_DEFAULT_STORAGE = _PROJECT_ROOT / "storage"
 DEFAULT_INPUT = _DEFAULT_STORAGE / "output.csv"
 DEFAULT_OUTPUT = _DEFAULT_STORAGE / "preproccessed.csv"
 
