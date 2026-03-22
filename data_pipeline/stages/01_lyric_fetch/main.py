@@ -85,9 +85,38 @@ def _update_global_and_report(succeed_inc: int, failed_inc: int):
             while next_report_threshold <= total_processed:
                 next_report_threshold += next_report_threshold_step 
 
+def finalize(df: pd.DataFrame, db: LyricDatabase) -> pd.DataFrame:
+    """
+    Finalize the DataFrame by merging it with lyrics data from the database.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing song data (must have an 'id' column).
+        db (LyricDatabase): Database instance providing connection to the lyrics table.
+
+    Returns:
+        pd.DataFrame: Merged DataFrame with columns from both sources.
+    """
+    # Retrieve lyrics data from the database
+    lyrics_df = pd.read_sql_query(
+        'SELECT song_id, lyrics, lyrics_source FROM lyrics',
+        db._get_connection()
+    )
+
+    # Merge input DataFrame with lyrics data on the song identifier
+    merged_df = pd.merge(
+        df,
+        lyrics_df,
+        left_on='id',
+        right_on='song_id',
+        how='right'
+    )
+
+    return merged_df
 
 def main(cxt: DataPipelineContext) -> None:
     db_path = cxt.get_file_path('lyrics.db')
+
+    db = LyricDatabase(db_path)
 
     df = pd.read_csv(cxt.get_previous_stage_output_file_path())
     df = df.sample(frac=1, random_state=898).reset_index(drop=True)
@@ -104,36 +133,43 @@ def main(cxt: DataPipelineContext) -> None:
 
     print('Loaded df, rows:', len(df), ',\tCPUs:', num_threads)
 
-    if n == 0:
+    if n != 0 and 0:
         print("DataFrame is empty, nothing to process")
-        return
 
-    # Split DataFrame into roughly equal parts (last one may be smaller)
-    chunk_size = n // num_threads
-    remainder = n % num_threads
-    df_parts = []
-    start = 0
-    for i in range(num_threads):
-        end = start + chunk_size + (1 if i < remainder else 0)
-        df_parts.append(df.iloc[start:end])
-        start = end
+        # Split DataFrame into roughly equal parts (last one may be smaller)
+        chunk_size = n // num_threads
+        remainder = n % num_threads
+        df_parts = []
+        start = 0
+        for i in range(num_threads):
+            end = start + chunk_size + (1 if i < remainder else 0)
+            df_parts.append(df.iloc[start:end])
+            start = end
 
-    print('Starting threads')
+        print('Starting threads')
 
-    # Start threads
-    threads = []
-    for i, part in enumerate(df_parts):
-        if part.empty:
-            continue
-        t = threading.Thread(target=process_lyrics, args=(db_path, part, i))
-        t.start()
-        threads.append(t)
+        # Start threads
+        threads = []
+        for i, part in enumerate(df_parts):
+            if part.empty:
+                continue
+            t = threading.Thread(target=process_lyrics, args=(db_path, part, i))
+            t.start()
+            threads.append(t)
 
-    # Wait for completion
-    for t in threads:
-        t.join()
+        # Wait for completion
+        for t in threads:
+            t.join()
 
-    # Final report
-    with lock:
-        total = total_succeed + total_failed
-        print(f"\nProcessing completed. Total rows: {total}, successful: {total_succeed}, errors: {total_failed}")
+        # Final report
+        with lock:
+            total = total_succeed + total_failed
+            print(f"\nProcessing completed. Total rows: {total}, successful: {total_succeed}, errors: {total_failed}")
+
+    # Export to csv
+    print("Finalizing")
+    df = pd.read_csv(cxt.get_previous_stage_output_file_path())
+    print("- Merging")
+    final_df = finalize(df, db)
+    print("- Saving")
+    final_df.to_csv(cxt.get_output_file_path())
