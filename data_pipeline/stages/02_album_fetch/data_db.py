@@ -64,6 +64,11 @@ class AlbumCoverDB:
             """, (album.album_id, album.album_name, artists_json,
                   album.image_path, album.image_source, additional_json))
             
+            conn.execute("""
+                DELETE FROM failed_album_covers
+                WHERE album_id = ?
+            """, (album.album_id, ))
+            
     def save_failed(self, album: AlbumCover) -> None:
         """
         Insert or replace an AlbumCover record.
@@ -78,6 +83,17 @@ class AlbumCoverDB:
                 (album_id, album_name, artists)
                 VALUES (?, ?, ?)
             """, (album.album_id, album.album_name, artists_json))
+
+    def failed_to_load(self, album_id: str) -> bool:
+        conn = self._get_connection()
+        cursor = conn.execute('''
+        SELECT * 
+        FROM failed_album_covers
+        WHERE album_id = ?
+''', (album_id,))
+        row = cursor.fetchone()
+
+        return row is not None
 
     def get(self, album_id: str) -> Optional[AlbumCover]:
         """
@@ -100,7 +116,8 @@ class AlbumCoverDB:
             artists=json.loads(row[2]),
             image_path=row[3],
             image_source=row[4],
-            additional_info=json.loads(row[5]) if row[5] else {}
+            additional_info=json.loads(row[5]) if row[5] else {},
+            image=None
         )
 
     def close_current_thread_connection(self) -> None:
