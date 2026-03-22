@@ -49,11 +49,69 @@ a:hover {
 
 .main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 1.5rem 1.25rem;
+  min-height: 0;
 }
 
 .panel {
   max-width: 40rem;
+}
+
+.panel-wide {
+  max-width: 48rem;
+}
+
+.h2 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.song-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #252a36;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.song-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #252a36;
+  background: #12151c;
+}
+
+.song-item:last-child {
+  border-bottom: none;
+}
+
+.song-id {
+  flex-shrink: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: #7dffb3;
+  padding-top: 0.15rem;
+}
+
+.song-body {
+  min-width: 0;
+}
+
+.song-title {
+  font-weight: 600;
+}
+
+.song-meta {
+  font-size: 0.9rem;
+  color: #c4cad8;
+  margin-top: 0.2rem;
 }
 
 .panel h1 {
@@ -91,4 +149,186 @@ code {
 
 .err {
   color: #ff8a8a;
+}
+
+/* ----- Full-bleed galaxy map (/map) ----- */
+.map-page {
+  margin: -1.5rem -1.25rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.galaxy-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #030308;
+  border-top: 1px solid #252a36;
+}
+
+/* Smaller map area: all points stay in view at once after Fit; good for small datasets */
+.galaxy-wrap--compact {
+  flex: 0 0 auto;
+  max-height: min(360px, 42vh);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  border: 1px solid #2a3142;
+  border-radius: 12px;
+}
+
+.galaxy-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.galaxy-wrap--compact .galaxy-canvas {
+  min-height: 220px;
+  max-height: 280px;
+}
+
+.galaxy-canvas:active {
+  cursor: grabbing;
+}
+
+.galaxy-hud {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(180deg, rgba(6, 8, 14, 0.92) 0%, rgba(6, 8, 14, 0.55) 70%, transparent 100%);
+  pointer-events: none;
+}
+
+.galaxy-hud * {
+  pointer-events: auto;
+}
+
+.galaxy-hud-title {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c8d0e4;
+}
+
+.galaxy-hud-meta {
+  font-size: 0.8rem;
+  color: #8ab4ff;
+  margin-top: 0.15rem;
+  font-family: ui-monospace, monospace;
+}
+
+.galaxy-hud-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.galaxy-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #9aa3b5;
+}
+
+.galaxy-input,
+.galaxy-select {
+  background: #12151c;
+  border: 1px solid #2a3142;
+  color: #e8e8ec;
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.8rem;
+}
+
+.galaxy-input {
+  width: 5.5rem;
+}
+
+.galaxy-btn {
+  background: #1e2640;
+  border: 1px solid #3d4a6b;
+  color: #dce4ff;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.galaxy-btn:hover {
+  background: #283252;
+}
+
+.galaxy-zoom {
+  font-size: 0.78rem;
+  color: #7dffb3;
+  font-family: ui-monospace, monospace;
+}
+
+.galaxy-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: #6b7488;
+  max-width: 36rem;
+}
+
+.galaxy-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 3, 8, 0.88);
+  color: #c4cad8;
+  font-size: 0.95rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.galaxy-overlay-err strong {
+  color: #ff9a9a;
+}
+
+.galaxy-err-pre {
+  text-align: left;
+  max-width: 42rem;
+  overflow: auto;
+  font-size: 0.75rem;
+  background: #0a0c12;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #2a3142;
+  margin: 0.75rem 0;
+  color: #e8b4b4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.galaxy-tracks-meta {
+  font-size: 0.82rem;
+  margin-bottom: 0.65rem;
+}
+
+.galaxy-tracks-path {
+  font-size: 0.72rem;
+  word-break: break-all;
+}
+
+.galaxy-xy {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82em;
 }

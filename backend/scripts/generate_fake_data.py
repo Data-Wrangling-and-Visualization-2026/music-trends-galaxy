@@ -67,15 +67,30 @@ cursor.execute("""
     )
 """)
 
+# Примерные данные в формате таблицы songs (artists — JSON-массив строк)
 songs = [
-    (1, "Bohemian Rhapsody", json.dumps(["Queen"]), "A Night at the Opera", "album_123",
+    (1, "Bohemian Rhapsody", json.dumps(["Queen"]), "A Night at the Opera", "album_queen_opera",
      "Is this the real life? Is this just fantasy?"),
-    (2, "Imagine", json.dumps(["John Lennon"]), "Imagine", "album_456",
+    (2, "Imagine", json.dumps(["John Lennon"]), "Imagine", "album_lennon_imagine",
      "Imagine there's no heaven..."),
-    (3, "Like a Rolling Stone", json.dumps(["Bob Dylan"]), "Highway 61 Revisited", "album_789",
-     "Once upon a time you dressed so fine...")
+    (3, "Like a Rolling Stone", json.dumps(["Bob Dylan"]), "Highway 61 Revisited", "album_dylan_61",
+     "Once upon a time you dressed so fine..."),
+    (4, "Кино", json.dumps(["Виктор Цой", "Кино"]), "Группа крови", "album_kino_gruppa",
+     "Группа крови, руку пожать..."),
+    (5, "Smells Like Teen Spirit", json.dumps(["Nirvana"]), "Nevermind", "album_nirvana_nevermind",
+     "With the lights out, it's less dangerous..."),
+    (6, "Billie Jean", json.dumps(["Michael Jackson"]), "Thriller", "album_mj_thriller",
+     "She was more like a beauty queen..."),
+    (7, "Blinding Lights", json.dumps(["The Weeknd"]), "After Hours", "album_weeknd_after",
+     "I've been tryna call..."),
+    (8, "Levitating", json.dumps(["Dua Lipa", "DaBaby"]), "Future Nostalgia", "album_dua_future",
+     "If you wanna run away with me, I know a galaxy..."),
 ]
-cursor.executemany("INSERT INTO songs VALUES (?,?,?,?,?,?)", songs)
+# Idempotent: same ids on every container start (bind-mounted data volume)
+cursor.executemany(
+    "INSERT OR REPLACE INTO songs VALUES (?,?,?,?,?,?)",
+    songs,
+)
 conn.commit()
 conn.close()
 

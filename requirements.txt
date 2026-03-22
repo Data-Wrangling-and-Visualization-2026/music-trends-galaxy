@@ -3,6 +3,5 @@ uvicorn[standard]
 sqlalchemy
 msgpack
 aiofiles
-python-multipart
-pillow
-pandas
+python-multipart  
+pillow            
