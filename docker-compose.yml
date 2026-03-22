@@ -1,0 +1,32 @@
+# SQLite хранится в ./music-trends-galaxy/backend/data (том бэкенда).
+# Отдельный сервис БД не нужен: данные создаёт entrypoint (generate_fake_data.py).
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+      # Pipeline CSV (embeded_data.csv) for /api/galaxy/points
+      - ./storage:/app/storage:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy

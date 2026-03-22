@@ -16,14 +16,14 @@ COPY ./data /app/data
 COPY ./scripts /app/scripts
 COPY ./entrypoint.sh /app/entrypoint.sh
 
-# Make the entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
+# Windows checkouts often use CRLF; Linux then fails with "no such file or directory" on shebang
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose the FastAPI default port
 EXPOSE 8000
 
-# Set the entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Invoke via sh so a bad shebang line never breaks the container
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 
 # Default command
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
