@@ -22,11 +22,12 @@ from types import ModuleType
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-ROOT_DIR    = Path(__file__).resolve().parent
-STAGES_DIR  = ROOT_DIR / Path("stages")
-STORAGE_DIR = ROOT_DIR / Path("storage")
-BACKUP_DIR  = ROOT_DIR / Path("_backup_storage")
-CONFIG_FILE = ROOT_DIR / Path("config.yaml")
+ROOT_DIR    = Path(__file__).resolve().parent  # data_pipeline/
+STAGES_DIR  = ROOT_DIR / "stages"
+# Project root storage (matches Docker ./storage mount for frontend)
+STORAGE_DIR = (ROOT_DIR / ".." / "storage").resolve()
+BACKUP_DIR  = (ROOT_DIR / ".." / "_backup_storage").resolve()
+CONFIG_FILE = ROOT_DIR / "config.yaml"
 
 # ----------------------------------------------------------------------
 # Stage discovery and helpers
@@ -226,13 +227,16 @@ def cmd_run(args) -> None:
             print(f"Error: {e}")
             sys.exit(1)
     
-    # Read config 
+    # Read config
     config = Config(path=str(CONFIG_FILE.resolve()))
 
     # Run each stage in order
+    limit = getattr(args, "limit", None)
     for path in stage_paths:
         filename = path.name
         context = DataPipelineContext(ROOT_DIR, filename, config)
+        if limit is not None and "04" in path.name:
+            context.limit = limit
         print(f"Running stage: {path.name}")
         # try:
         if 1:
@@ -408,8 +412,11 @@ def main():
         if not rest:
             print("Error: 'run' requires stage identifiers or a range.")
             sys.exit(1)
-        # Create a simple namespace for the run command
-        run_args = argparse.Namespace(identifiers=rest)
+        run_parser = argparse.ArgumentParser()
+        run_parser.add_argument("identifiers", nargs="+", help="Stage IDs (e.g. 03 04) or range (01-04)")
+        run_parser.add_argument("--limit", type=int, default=None, help="Max rows for stage 04 (clustering)")
+        run_parsed, unknown = run_parser.parse_known_args(rest)
+        run_args = argparse.Namespace(identifiers=run_parsed.identifiers, limit=run_parsed.limit)
         cmd_run(run_args)
     elif command == "clear":
         if not rest:

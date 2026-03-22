@@ -66,7 +66,6 @@ class DataPipelineContext:
         self.stage_name = stage_name
 
         self.root_dir = Path(root_dir)
-        
         self.global_config = config
         self.local_config = self.global_config.get(self.folder_name)
 
