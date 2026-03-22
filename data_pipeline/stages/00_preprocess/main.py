@@ -54,6 +54,7 @@ def main(cxt: DataPipelineContext) -> None:
     initial_count = len(df)
     print(f"Initial number of songs: {initial_count}")
 
+    df = df.drop(columns=['track_number', 'disc_number', 'explicit', 'year', 'release_date'], errors='ignore') # remove unused columns, ignore if they are not present
     df = df.dropna(subset=['name', 'artists', 'album_id'])
     df = df.drop_duplicates(subset=['name', 'artists', 'album_id'])
     df = remove_instrumental(df)
