@@ -194,7 +194,6 @@ def cmd_list(args) -> None:
             desc = "Error in getting description"
         print(f"{stage['id']:<4} {stage['full_name']:<20} {desc}")
 
-
 def cmd_run(args) -> None:
     """
     Execute one or more pipeline stages based on provided identifiers or a range.
@@ -235,11 +234,12 @@ def cmd_run(args) -> None:
         filename = path.name
         context = DataPipelineContext(ROOT_DIR, filename, config)
         print(f"Running stage: {path.name}")
-        try:
+        # try:
+        if 1:
             run_stage(path, context)
-        except Exception as e:
-            print(f"Error in stage {path.name}: {e}")
-            sys.exit(1)
+        # except Exception as e:
+            # print(f"Error in stage {path.name}: {e}")
+            # sys.exit(1)
         print(f"Finished stage: {path.name}")
 
 

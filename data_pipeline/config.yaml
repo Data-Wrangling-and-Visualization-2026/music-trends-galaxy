@@ -1,5 +1,7 @@
 export_folder: export
 storage_folder: storage
+input_folder: storage/input
+output_file_name: tracks_features.csv
 
 02_album_fetch:
   ouput_folder_name: covers
