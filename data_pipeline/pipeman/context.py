@@ -47,6 +47,7 @@ class DataPipelineContext:
     '''
     STORAGE_PATH: Path = 'storage'
     EXPORT_PATH: Path = 'export'
+    INPUT_PATH: Path = 'input'
 
     stage_id: int
     stage_name: str
@@ -71,10 +72,12 @@ class DataPipelineContext:
 
         self.EXPORT_PATH  = root_dir / config.get('export_folder')
         self.STORAGE_PATH = root_dir / config.get('storage_folder')
+        self.INPUT_PATH   = root_dir / config.get('input_folder')
 
         # Ensure created
         self.EXPORT_PATH.mkdir(exist_ok=True)
         self.STORAGE_PATH.mkdir(exist_ok=True)
+        self.INPUT_PATH.mkdir(exist_ok=True)
 
     def get(self, key: str) -> Any:
         '''
@@ -101,10 +104,23 @@ class DataPipelineContext:
         return self.global_config.get(key)
     
     def get_file_path_from_stage(self, stage_id: int, filename: str) -> Path:
-        path = self.STORAGE_PATH / f'{stage_id:02d}' 
+        if stage_id < 0:
+            path = self.INPUT_PATH
+        else:
+            path = self.STORAGE_PATH / f'{stage_id:02d}' 
+            
         path.mkdir(exist_ok=True)
 
         return path / filename
     
     def get_file_path(self, filename: str) -> Path:
         return self.get_file_path_from_stage(self.stage_id, filename)
+    
+    def get_file_path_from_previous_stage(self, filename: str) -> Path:
+        return self.get_file_path_from_stage(self.stage_id - 1, filename)
+    
+    def get_output_file_path(self) -> Path:
+        return self.get_file_path(self.global_config.get('output_file_name'))
+    
+    def get_previous_stage_output_file_path(self) -> Path:
+        return self.get_file_path_from_previous_stage(self.global_config.get('output_file_name'))
