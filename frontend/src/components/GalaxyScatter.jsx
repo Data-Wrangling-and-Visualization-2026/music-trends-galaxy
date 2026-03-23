@@ -10,7 +10,6 @@ function lerp(a, b, t) {
   return a + (b - a) * t
 }
 
-/** Simple deterministic hash in [0, 1) from string id */
 function hash01(s) {
   let h = 2166136261
   const str = String(s)
@@ -30,10 +29,6 @@ function hslToRgb(h, s, l) {
   return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)]
 }
 
-/**
- * Galaxy-like colour: red = aggressive (high lyrical_intensity), blue = calm.
- * x/y shift hue/saturation/lightness like stellar dust and spiral arms.
- */
 function starColor(x, y, bounds, lyricalIntensity, id) {
   const w = bounds.maxX - bounds.minX || 1
   const h = bounds.maxY - bounds.minY || 1
@@ -46,7 +41,6 @@ function starColor(x, y, bounds, lyricalIntensity, id) {
   const angle = Math.atan2(cy, cx)
   const dist = Math.min(1, Math.hypot(cx, cy) * 1.35)
 
-  // Base hue: calm -> blue (240°), aggressive -> red (0°)
   let hue = lerp(230, 2, t)
   hue += (angle / (2 * Math.PI)) * 55
   hue += nx * 38 + ny * 42
@@ -62,30 +56,17 @@ function starColor(x, y, bounds, lyricalIntensity, id) {
 }
 
 function computeBounds(points) {
-  let minX = Infinity
-  let maxX = -Infinity
-  let minY = Infinity
-  let maxY = -Infinity
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
   for (const p of points) {
-    minX = Math.min(minX, p.x)
-    maxX = Math.max(maxX, p.x)
-    minY = Math.min(minY, p.y)
-    maxY = Math.max(maxY, p.y)
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x)
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y)
   }
-  if (!Number.isFinite(minX)) {
-    return { minX: -1, maxX: 1, minY: -1, maxY: 1 }
-  }
+  if (!Number.isFinite(minX)) return { minX: -1, maxX: 1, minY: -1, maxY: 1 }
   const padX = (maxX - minX) * 0.04 || 0.08
   const padY = (maxY - minY) * 0.04 || 0.08
-  return {
-    minX: minX - padX,
-    maxX: maxX + padX,
-    minY: minY - padY,
-    maxY: maxY + padY,
-  }
+  return { minX: minX - padX, maxX: maxX + padX, minY: minY - padY, maxY: maxY + padY }
 }
 
-/** Fit the full data bounding box inside the canvas (both axes), with a thin margin. */
 function initialTransform(canvasW, canvasH, bounds) {
   const bw = bounds.maxX - bounds.minX || 1
   const bh = bounds.maxY - bounds.minY || 1
@@ -109,118 +90,106 @@ export default function GalaxyScatter() {
   const [error, setError] = useState(null)
   const [meta, setMeta] = useState(null)
   const [sample, setSample] = useState('first')
-  const [limit, setLimit] = useState(8_000)
+  const [limit, setLimit] = useState(8000)
   const [hudZoom, setHudZoom] = useState('100')
+
+  // hover tooltip
+  const [hoveredPoint, setHoveredPoint] = useState(null)
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
+
+  // selected song panel
+  const [selectedSong, setSelectedSong] = useState(null)
+  const [songDetails, setSongDetails] = useState(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [detailsError, setDetailsError] = useState(null)
 
   const dragging = useRef(false)
   const lastPtr = useRef({ x: 0, y: 0 })
+  const animationFrameRef = useRef(null)
 
+  // ----- data loading -----
   const loadPoints = useCallback(async () => {
     setStatus('loading')
     setError(null)
     try {
-      const q = new URLSearchParams({
-        limit: String(limit),
-        sample,
-        seed: '42',
-      })
+      const q = new URLSearchParams({ limit: String(limit), sample, seed: '42' })
       const res = await fetch(`/api/galaxy/points?${q}`)
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || `HTTP ${res.status}`)
-      }
+      if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`)
       const data = await res.json()
-      pointsRef.current = data.points || []
-      const scaledPoints = data.points.map(p => ({
-        ...p,
-        x: p.x * COORD_SCALE,
-        y: p.y * COORD_SCALE
-      }));
-      pointsRef.current = scaledPoints;
+      const scaledPoints = (data.points || []).map(p => ({ ...p, x: p.x * COORD_SCALE, y: p.y * COORD_SCALE }))
+      pointsRef.current = scaledPoints
       boundsRef.current = computeBounds(pointsRef.current)
-      setMeta({
-        count: data.count,
-        source_csv: data.source_csv,
-        sample_mode: data.sample_mode,
-      })
+      setMeta({ count: data.count, source_csv: data.source_csv, sample_mode: data.sample_mode })
       if (!data.points || data.points.length === 0) {
-        setError('CSV loaded but contains no rows (check filters and file).')
+        setError('CSV loaded but contains no rows')
         setStatus('error')
         return
       }
       setStatus('ready')
     } catch (e) {
-      setError(e.message || String(e))
+      setError(e.message)
       setStatus('error')
     }
   }, [limit, sample])
 
-  useEffect(() => {
-    loadPoints()
-  }, [loadPoints])
+  useEffect(() => { loadPoints() }, [loadPoints])
 
+  // ----- canvas drawing (unchanged, except we rely on pointsRef) -----
   const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const points = pointsRef.current;
-    const bounds = boundsRef.current;
-    if (!canvas || !bounds || points.length === 0) return;
-  
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(1, Math.floor(rect.width * dpr));
-    const h = Math.max(1, Math.floor(rect.height * dpr));
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-  
-    const ctx = canvas.getContext('2d');
-    const { scale, tx, ty } = transformRef.current;
-  
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = '#030308';
-    ctx.fillRect(0, 0, w, h);
-  
-    if (points.length === 0) return;
-  
-    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, tx * dpr, ty * dpr);
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.6;
-  
-    const zoomRadiusFactor = Math.min(1, 8 / scale); // при scale > 8 радиус уменьшается
-  
-    for (const p of points) {
-      const { r, g, b } = starColor(p.x, p.y, bounds, p.lyrical_intensity, p.id);
-      const baseSize = 0.38;
-      const randomFactor = hash01(p.id + 'o') * 0.65;
-      const intensityFactor = (1 - p.lyrical_intensity) * 0.2;
-      let br = baseSize + randomFactor + intensityFactor;
-      br = br * (0.5 + zoomRadiusFactor * 0.8); // уменьшаем при зуме
-      br = Math.min(1.2, br); // ограничиваем максимум
-  
-      const core = `rgba(${r},${g},${b},0.92)`;
-      const halo = `rgba(${Math.min(255, r + 30)},${Math.min(255, g + 20)},${Math.min(255, b + 40)},0.18)`;
-  
-      // гало (свет)
-      ctx.beginPath();
-      ctx.fillStyle = halo;
-      ctx.arc(p.x, p.y, br * 1.2, 0, Math.PI * 2);
-      ctx.fill();
-  
-      // ядро (твёрдая часть)
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = core;
-      ctx.arc(p.x, p.y, br * 0.65, 0, Math.PI * 2);
-      ctx.fill();
-  
-      // снова включаем свечение для следующих точек
-      ctx.globalCompositeOperation = 'lighter';
-    }
-  
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-  }, []);
+    const canvas = canvasRef.current
+    const points = pointsRef.current
+    const bounds = boundsRef.current
+    if (!canvas || !bounds || points.length === 0) return
 
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    const w = Math.max(1, Math.floor(rect.width * dpr))
+    const h = Math.max(1, Math.floor(rect.height * dpr))
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w
+      canvas.height = h
+    }
+
+    const ctx = canvas.getContext('2d')
+    const { scale, tx, ty } = transformRef.current
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.fillStyle = '#030308'
+    ctx.fillRect(0, 0, w, h)
+
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, tx * dpr, ty * dpr)
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.globalAlpha = 0.6
+    const zoomRadiusFactor = Math.min(1, 8 / scale)
+
+    for (const p of points) {
+      const { r, g, b } = starColor(p.x, p.y, bounds, p.lyrical_intensity, p.id)
+      const baseSize = 0.38
+      const randomFactor = hash01(p.id + 'o') * 0.65
+      const intensityFactor = (1 - p.lyrical_intensity) * 0.2
+      let br = baseSize + randomFactor + intensityFactor
+      br = br * (0.5 + zoomRadiusFactor * 0.8)
+      br = Math.min(1.2, br)
+
+      const core = `rgba(${r},${g},${b},0.92)`
+      const halo = `rgba(${Math.min(255, r + 30)},${Math.min(255, g + 20)},${Math.min(255, b + 40)},0.18)`
+
+      ctx.beginPath()
+      ctx.fillStyle = halo
+      ctx.arc(p.x, p.y, br * 1.2, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.fillStyle = core
+      ctx.arc(p.x, p.y, br * 0.65, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.globalCompositeOperation = 'lighter'
+    }
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = 1
+  }, [])
+
+  // ----- coordinate transformation helpers -----
   const screenToData = (sx, sy) => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
@@ -229,12 +198,85 @@ export default function GalaxyScatter() {
     const cssX = sx - rect.left
     const cssY = sy - rect.top
     const { scale, tx, ty } = transformRef.current
-    return {
-      x: (cssX - tx) / scale,
-      y: (cssY - ty) / scale,
+    return { x: (cssX - tx) / scale, y: (cssY - ty) / scale }
+  }
+
+  const dataToScreen = (x, y) => {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    const { scale, tx, ty } = transformRef.current
+    return { x: (x * scale + tx) / dpr, y: (y * scale + ty) / dpr }
+  }
+
+  // ----- hover detection -----
+  const findClosestPoint = (screenX, screenY) => {
+    const canvas = canvasRef.current
+    if (!canvas || pointsRef.current.length === 0) return null
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    const cssX = screenX - rect.left
+    const cssY = screenY - rect.top
+    const { scale, tx, ty } = transformRef.current
+    const px = (cssX - tx) / scale
+    const py = (cssY - ty) / scale
+
+    let best = null
+    let bestDist = 15 / scale  // порог в пикселях, переведённый в координаты данных
+    for (const p of pointsRef.current) {
+      const dx = p.x - px
+      const dy = p.y - py
+      const dist = Math.hypot(dx, dy)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = p
+      }
+    }
+    return best
+  }
+
+  const handleMouseMove = (e) => {
+    if (dragging.current) return
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+    animationFrameRef.current = requestAnimationFrame(() => {
+      const point = findClosestPoint(e.clientX, e.clientY)
+      if (point) {
+        const { x: screenX, y: screenY } = dataToScreen(point.x, point.y)
+        setHoveredPoint(point)
+        setHoverPos({ x: screenX, y: screenY })
+      } else {
+        setHoveredPoint(null)
+      }
+    })
+  }
+
+  const handleClick = async (e) => {
+    const point = findClosestPoint(e.clientX, e.clientY)
+    if (!point) return
+    setSelectedSong(point)
+    setDetailsLoading(true)
+    setDetailsError(null)
+    setSongDetails(null)
+    try {
+      const res = await fetch(`/api/song/${point.id}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setSongDetails(data)
+    } catch (err) {
+      setDetailsError(err.message)
+    } finally {
+      setDetailsLoading(false)
     }
   }
 
+  const closeDetails = () => {
+    setSelectedSong(null)
+    setSongDetails(null)
+    setDetailsError(null)
+  }
+
+  // ----- event handlers -----
   const onWheel = (e) => {
     e.preventDefault()
     const canvas = canvasRef.current
@@ -283,6 +325,61 @@ export default function GalaxyScatter() {
     draw()
   }
 
+  // update canvas when transform or points change
+  useEffect(() => {
+    if (status === 'ready') draw()
+  }, [status, draw])
+
+  // adjust transform after container resize
+  useEffect(() => {
+    if (status !== 'ready') return
+    const ro = new ResizeObserver(() => {
+      const canvas = canvasRef.current
+      const bounds = boundsRef.current
+      if (canvas && bounds && pointsRef.current.length > 0) {
+        const rect = canvas.getBoundingClientRect()
+        transformRef.current = initialTransform(rect.width, rect.height, bounds)
+        setHudZoom(String(Math.round(transformRef.current.scale * 100)))
+        draw()
+      }
+    })
+    if (containerRef.current) ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [status, draw])
+
+  // ----- helper for artists formatting -----
+  const formatArtists = (artists) => {
+    if (!artists) return '—'
+    if (Array.isArray(artists)) return artists.join(', ')
+    if (typeof artists === 'string') {
+      if (artists.startsWith('[') && artists.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(artists.replace(/'/g, '"'))
+          if (Array.isArray(parsed)) return parsed.join(', ')
+        } catch {}
+      }
+      return artists
+    }
+    return '—'
+  }
+
+  const formatDuration = (ms) => {
+    if (!ms && ms !== 0) return '—'
+    const minutes = Math.floor(ms / 60000)
+    const seconds = ((ms % 60000) / 1000).toFixed(0)
+    return `${minutes}:${seconds.padStart(2, '0')}`
+  }
+
+  const renderEnergyBar = (value) => {
+    const percent = clamp(value, 0, 1) * 100
+    return (
+      <div className="energy-bar">
+        <div className="energy-bar-fill" style={{ width: `${percent}%` }} />
+      </div>
+    )
+  }
+
+  // ----- render -----
   return (
     <div className="galaxy-wrap" ref={containerRef}>
       <div className="galaxy-hud">
@@ -307,21 +404,13 @@ export default function GalaxyScatter() {
           </label>
           <label className="galaxy-label">
             Sample
-            <select
-              className="galaxy-select"
-              value={sample}
-              onChange={(e) => setSample(e.target.value)}
-            >
+            <select className="galaxy-select" value={sample} onChange={(e) => setSample(e.target.value)}>
               <option value="first">First rows (fast)</option>
               <option value="random">Random (full scan)</option>
             </select>
           </label>
-          <button type="button" className="galaxy-btn" onClick={loadPoints}>
-            Reload
-          </button>
-          <button type="button" className="galaxy-btn" onClick={resetView}>
-            Fit
-          </button>
+          <button type="button" className="galaxy-btn" onClick={loadPoints}>Reload</button>
+          <button type="button" className="galaxy-btn" onClick={resetView}>Fit</button>
           <span className="galaxy-zoom">zoom ~{hudZoom}%</span>
         </div>
         <p className="galaxy-hint">
@@ -329,15 +418,74 @@ export default function GalaxyScatter() {
         </p>
       </div>
 
+      {/* tooltip */}
+      {hoveredPoint && (
+        <div
+          className="galaxy-tooltip"
+          style={{
+            left: hoverPos.x,
+            top: hoverPos.y,
+            transform: 'translate(-50%, -120%)',
+          }}
+        >
+          <strong>{hoveredPoint.name || '—'}</strong><br />
+          {formatArtists(hoveredPoint.artists)}
+        </div>
+      )}
+
+      {/* details panel */}
+      {selectedSong && (
+        <div className="details-panel">
+          <button className="details-close" onClick={closeDetails}>×</button>
+          <h2>{selectedSong.name || '—'}</h2>
+          <div className="details-artist">{formatArtists(selectedSong.artists)}</div>
+          {selectedSong.album && <div className="details-album">Album: {selectedSong.album}</div>}
+          {detailsLoading && <div className="details-loading">Loading details…</div>}
+          {detailsError && <div className="details-error">Error: {detailsError}</div>}
+          {songDetails && (
+            <>
+              {songDetails.duration_ms && (
+                <div className="details-duration">Duration: {formatDuration(songDetails.duration_ms)}</div>
+              )}
+              <div className="details-metrics">
+                {songDetails.energy !== undefined && (
+                  <div className="metric">
+                    <span>Energy</span>
+                    {renderEnergyBar(songDetails.energy)}
+                    <span className="metric-value">{Math.round(songDetails.energy * 10)}/10</span>
+                  </div>
+                )}
+                {songDetails.danceability !== undefined && (
+                  <div className="metric">
+                    <span>Danceability</span>
+                    {renderEnergyBar(songDetails.danceability)}
+                    <span className="metric-value">{Math.round(songDetails.danceability * 10)}/10</span>
+                  </div>
+                )}
+                {songDetails.valence !== undefined && (
+                  <div className="metric">
+                    <span>Valence</span>
+                    {renderEnergyBar(songDetails.valence)}
+                    <span className="metric-value">{Math.round(songDetails.valence * 10)}/10</span>
+                  </div>
+                )}
+              </div>
+              {songDetails.lyrics && (
+                <div className="details-lyrics">
+                  <h3>Lyrics</h3>
+                  <pre>{songDetails.lyrics}</pre>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {status === 'loading' && <div className="galaxy-overlay">Loading points…</div>}
       {status === 'error' && (
         <div className="galaxy-overlay galaxy-overlay-err">
           <strong>Could not load galaxy data</strong>
           <pre className="galaxy-err-pre">{error}</pre>
-          <p className="galaxy-hint">
-            Ensure <code>storage/embeded_data.csv</code> exists and the backend volume is mounted
-            (<code>./storage:/app/storage</code>).
-          </p>
         </div>
       )}
 
@@ -346,9 +494,10 @@ export default function GalaxyScatter() {
         className="galaxy-canvas"
         onWheel={onWheel}
         onMouseDown={onDown}
-        onMouseMove={onMove}
+        onMouseMove={handleMouseMove}
         onMouseUp={onUp}
         onMouseLeave={onUp}
+        onClick={handleClick}
       />
     </div>
   )

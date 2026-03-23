@@ -679,3 +679,154 @@ code {
 .pipeline-cta {
   text-align: center;
 }
+
+/* Tooltip */
+.galaxy-tooltip {
+  position: fixed;
+  background: rgba(20, 25, 40, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #3d4a6b;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: #e8e8ec;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: system-ui, sans-serif;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Details panel */
+.details-panel {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  bottom: 1rem;
+  width: 320px;
+  background: rgba(18, 21, 28, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid #2a3142;
+  border-radius: 20px;
+  padding: 1rem;
+  overflow-y: auto;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  color: #e8e8ec;
+}
+
+.details-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #9aa3b5;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.details-close:hover {
+  color: #fff;
+}
+
+.details-panel h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.3rem;
+  padding-right: 1.5rem;
+}
+
+.details-artist {
+  color: #8ab4ff;
+  font-size: 0.9rem;
+}
+
+.details-album {
+  font-size: 0.9rem;
+  color: #c4cad8;
+  margin-bottom: 0.5rem;
+}
+
+.details-duration {
+  font-size: 0.85rem;
+  color: #7dffb3;
+  margin-bottom: 0.5rem;
+}
+
+.details-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.metric span:first-child {
+  width: 80px;
+  color: #9aa3b5;
+}
+
+.energy-bar {
+  flex: 1;
+  height: 6px;
+  background: #2a3142;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.energy-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6e8eff, #8a4eff);
+  border-radius: 3px;
+  transition: width 0.2s;
+}
+
+.metric-value {
+  width: 32px;
+  text-align: right;
+  color: #c4cad8;
+  font-size: 0.75rem;
+}
+
+.details-lyrics {
+  margin-top: 0.5rem;
+}
+
+.details-lyrics h3 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+  color: #c8d0e4;
+}
+
+.details-lyrics pre {
+  background: #0a0c12;
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #b0b8d0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.details-loading, .details-error {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.details-error {
+  color: #ff8a8a;
+}
