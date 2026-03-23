@@ -1,5 +1,5 @@
-# SQLite хранится в ./music-trends-galaxy/backend/data (том бэкенда).
-# Отдельный сервис БД не нужен: данные создаёт entrypoint (generate_fake_data.py).
+# SQLite is stored in ./music-trends-galaxy/backend/data (backend volume).
+# A separate database service is not needed: the data is created by the entrypoint (generate_fake_data.py).
 
 services:
   backend:
@@ -10,7 +10,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/data:/app/data
-      # Pipeline CSV (embeded_data.csv) for /api/galaxy/points
+      # CSV for seed at startup (populates galaxy_tracks in SQLite)
       - ./storage:/app/storage:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
