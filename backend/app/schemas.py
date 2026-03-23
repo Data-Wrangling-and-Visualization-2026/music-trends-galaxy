@@ -22,6 +22,17 @@ class SongInfo(BaseModel):
     album: str
     album_id: str
     lyrics: str
+    duration_ms: Optional[int] = None
+    danceability: Optional[float] = None
+    energy: Optional[float] = None
+    valence: Optional[float] = None
+    loudness: Optional[float] = None
+    speechiness: Optional[float] = None
+    acousticness: Optional[float] = None
+    instrumentalness: Optional[float] = None
+    liveness: Optional[float] = None
+    tempo: Optional[float] = None
+    year: Optional[int] = None
 
 
 class GalaxyPoint(BaseModel):
