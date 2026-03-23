@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-Stage 3: t-SNE visualization.
-
-Input: embeddings (.npy), optional cluster labels (.npy).
-Output: CSV with x_coord, y_coord and cluster labels.
-"""
 
 import argparse
 import sys
@@ -27,6 +21,8 @@ def main():
     parser.add_argument("--random-state", type=int, default=42, help="Random seed")
     parser.add_argument("--sample-size", type=int, default=None,
                         help="If set, use random subsample for faster t-SNE")
+    parser.add_argument("--scale", type=float, default=10.0,
+                        help="Multiply coordinates by this factor (make galaxy wider)")
     args = parser.parse_args()
 
     if not args.input_embeddings.is_file():
@@ -55,6 +51,9 @@ def main():
     coords = tsne.fit_transform(embeddings_sample)
     print("t-SNE done.")
 
+    if args.scale != 1.0:
+        coords = coords * args.scale
+
     if use_subset:
         result_df = pd.DataFrame({"x_coord": coords[:, 0], "y_coord": coords[:, 1]})
         if args.deep_labels and args.deep_labels.is_file():
@@ -63,7 +62,6 @@ def main():
         if args.wide_labels and args.wide_labels.is_file():
             wide = np.load(args.wide_labels)
             result_df["wide_cluster"] = wide[indices]
-        # Если есть метаданные, берём их тоже по индексам
         if args.input_metadata and args.input_metadata.is_file():
             with open(args.input_metadata, "rb") as f:
                 df_meta = pickle.load(f)
