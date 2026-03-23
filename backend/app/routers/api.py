@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import SessionLocal
-from app.models import Song
-from app.schemas import SongInfo, SongListItem
+from app.models import Song, GalaxyTrack
+from app.schemas import SongInfo, SongListItem, SongFullInfo
 from app.config import COVERS_DIR
 from app.utils.file_handlers import read_image_file
 import json
@@ -53,15 +53,32 @@ def get_song_info(id: int, db: Session = Depends(get_db)):
         album=song.album,
         album_id=song.album_id,
         lyrics=song.lyrics,
-        duration_ms=song.duration_ms,
-        danceability=song.danceability,
-        energy=song.energy,
-        valence=song.valence,
-        loudness=song.loudness,
-        speechiness=song.speechiness,
-        acousticness=song.acousticness,
-        instrumentalness=song.instrumentalness,
-        liveness=song.liveness,
-        tempo=song.tempo,
-        year=song.year,
     )
+
+@router.get("/song/{id}/details")
+def get_song_details(id: str, db: Session = Depends(get_db)):
+    track = db.query(GalaxyTrack).filter(GalaxyTrack.id == id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found")
+    
+    artists = []
+    if track.artists:
+        try:
+            artists = json.loads(track.artists)
+        except:
+            artists = [track.artists] if track.artists else []
+    
+    return {
+        "id": track.id,
+        "name": track.name,
+        "artists": artists,
+        "album": track.album,
+        "album_id": track.album_id,
+        "lyrics": track.lyrics,
+        "x_coord": track.x_coord,
+        "y_coord": track.y_coord,
+        "lyrical_intensity": track.lyrical_intensity,
+        "lyrical_mood": track.lyrical_mood,
+        "energy": track.energy,
+        "valence": track.valence,
+    }

@@ -22,6 +22,14 @@ class SongInfo(BaseModel):
     album: str
     album_id: str
     lyrics: str
+    
+class SongFullInfo(BaseModel):
+    id: int
+    name: str
+    artists: List[str]
+    album: str
+    album_id: Optional[str] = None
+    lyrics: Optional[str] = None
     duration_ms: Optional[int] = None
     danceability: Optional[float] = None
     energy: Optional[float] = None
