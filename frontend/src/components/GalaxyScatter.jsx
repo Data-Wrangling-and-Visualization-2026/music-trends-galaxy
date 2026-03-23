@@ -223,7 +223,7 @@ export default function GalaxyScatter() {
     const py = (cssY - ty) / scale
 
     let best = null
-    let bestDist = 15 / scale  // порог в пикселях, переведённый в координаты данных
+    let bestDist = 15 / scale
     for (const p of pointsRef.current) {
       const dx = p.x - px
       const dy = p.y - py
@@ -259,7 +259,7 @@ export default function GalaxyScatter() {
     setDetailsError(null)
     setSongDetails(null)
     try {
-      const res = await fetch(`/api/song/${point.id}`)
+      const res = await fetch(`/api/song/${point.id}/details`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setSongDetails(data)
@@ -436,48 +436,54 @@ export default function GalaxyScatter() {
       {/* details panel */}
       {selectedSong && (
         <div className="details-panel">
-          <button className="details-close" onClick={closeDetails}>×</button>
-          <h2>{selectedSong.name || '—'}</h2>
-          <div className="details-artist">{formatArtists(selectedSong.artists)}</div>
-          {selectedSong.album && <div className="details-album">Album: {selectedSong.album}</div>}
-          {detailsLoading && <div className="details-loading">Loading details…</div>}
-          {detailsError && <div className="details-error">Error: {detailsError}</div>}
-          {songDetails && (
-            <>
-              {songDetails.duration_ms && (
-                <div className="details-duration">Duration: {formatDuration(songDetails.duration_ms)}</div>
-              )}
-              <div className="details-metrics">
-                {songDetails.energy !== undefined && (
-                  <div className="metric">
-                    <span>Energy</span>
-                    {renderEnergyBar(songDetails.energy)}
-                    <span className="metric-value">{Math.round(songDetails.energy * 10)}/10</span>
-                  </div>
-                )}
-                {songDetails.danceability !== undefined && (
-                  <div className="metric">
-                    <span>Danceability</span>
-                    {renderEnergyBar(songDetails.danceability)}
-                    <span className="metric-value">{Math.round(songDetails.danceability * 10)}/10</span>
-                  </div>
-                )}
-                {songDetails.valence !== undefined && (
-                  <div className="metric">
-                    <span>Valence</span>
-                    {renderEnergyBar(songDetails.valence)}
-                    <span className="metric-value">{Math.round(songDetails.valence * 10)}/10</span>
-                  </div>
-                )}
+          <div className="details-header">
+            <h2>{selectedSong.name || '—'}</h2>
+            <button className="details-close" onClick={closeDetails}>×</button>
+          </div>
+          <div className="details-content">
+            <div className="details-artist">{formatArtists(selectedSong.artists)}</div>
+            {selectedSong.album && <div className="details-album">Album: {selectedSong.album}</div>}
+
+            {songDetails?.duration_ms && (
+              <div className="details-duration">
+                Duration: {formatDuration(songDetails.duration_ms)}
               </div>
-              {songDetails.lyrics && (
-                <div className="details-lyrics">
-                  <h3>Lyrics</h3>
-                  <pre>{songDetails.lyrics}</pre>
+            )}
+
+            <div className="details-metrics">
+              {songDetails?.energy !== undefined && (
+                <div className="metric">
+                  <span>Energy</span>
+                  {renderEnergyBar(songDetails.energy)}
+                  <span className="metric-value">{Math.round(songDetails.energy * 10)}/10</span>
                 </div>
               )}
-            </>
-          )}
+              {songDetails?.danceability !== undefined && (
+                <div className="metric">
+                  <span>Danceability</span>
+                  {renderEnergyBar(songDetails.danceability)}
+                  <span className="metric-value">{Math.round(songDetails.danceability * 10)}/10</span>
+                </div>
+              )}
+              {songDetails?.valence !== undefined && (
+                <div className="metric">
+                  <span>Valence</span>
+                  {renderEnergyBar(songDetails.valence)}
+                  <span className="metric-value">{Math.round(songDetails.valence * 10)}/10</span>
+                </div>
+              )}
+            </div>
+
+            {songDetails?.lyrics && (
+              <div className="details-lyrics">
+                <h3>Lyrics</h3>
+                <pre>{songDetails.lyrics}</pre>
+              </div>
+            )}
+
+            {detailsLoading && <div className="details-loading">Loading details…</div>}
+            {detailsError && <div className="details-error">Error: {detailsError}</div>}
+          </div>
         </div>
       )}
 
