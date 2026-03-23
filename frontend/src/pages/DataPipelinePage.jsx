@@ -30,18 +30,18 @@ export default function DataPipelinePage() {
             </ul>
           </div>
           <div className="step">
-            <h2>3. AI‑Driven Lyric Analysis</h2>
-            <p>We use a local LLM (DeepSeek / Llama‑3) to analyse lyrics and generate:</p>
-            <ul>
-              <li><strong>Lyrical intensity</strong> (0–1): how aggressive / confrontational the words are.</li>
-              <li><strong>Lyrical mood</strong> (0–1): positivity of the lyrics.</li>
-              <li><strong>Theme extraction</strong> (e.g., love, protest, party).</li>
-            </ul>
-            <p>These features are combined with audio features to create a rich representation of each track.</p>
+            <h2>3. Text Embeddings</h2>
+            <p>Each song's lyrics are converted into a high‑dimensional vector (embedding) using <code>sentence-transformers/all-MiniLM-L6-v2</code>. This model encodes the semantic meaning of the text, so lyrically similar songs get similar vectors.</p>
+            <p>Embeddings are generated in batches, producing a 384‑dimensional vector per track. These vectors capture themes, emotions, and style without the need for manual feature engineering.</p>
           </div>
           <div className="step">
-            <h2>4. Embedding & Clustering</h2>
-            <p>Lyrics are converted into semantic vectors using <code>all‑MiniLM‑L6‑v2</code> (or a larger model). We then apply <strong>UMAP</strong> to reduce dimensionality to 15, followed by <strong>HDBSCAN</strong> clustering to discover “constellations”. Finally, <strong>t‑SNE</strong> projects everything into 2D coordinates for visualisation.</p>
+            <h2>4. Dimensionality Reduction & Clustering</h2>
+            <p>We first reduce the 384‑dimensional embeddings to 15 dimensions using <strong>UMAP</strong>, preserving both local and global structure. Then <strong>HDBSCAN</strong> discovers clusters (“constellations”) of semantically similar songs. Two levels of clustering are available:</p>
+            <ul>
+              <li><strong>Deep clusters</strong> – smaller, more specific groups (min_cluster_size=50).</li>
+              <li><strong>Wide clusters</strong> – larger, broader genres (min_cluster_size=500).</li>
+            </ul>
+            <p>Finally, <strong>t‑SNE</strong> projects the 15‑dimensional points onto a 2D canvas for interactive visualisation. The resulting coordinates (x, y) are stored together with cluster labels.</p>
           </div>
           <div className="step">
             <h2>5. Backend & API</h2>
