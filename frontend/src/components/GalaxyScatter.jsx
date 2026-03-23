@@ -30,29 +30,33 @@ function hslToRgb(h, s, l) {
 }
 
 function starColor(x, y, bounds, lyricalIntensity, id) {
-  const w = bounds.maxX - bounds.minX || 1
-  const h = bounds.maxY - bounds.minY || 1
-  const nx = (x - bounds.minX) / w
-  const ny = (y - bounds.minY) / h
-  const t = clamp(Number.isFinite(lyricalIntensity) ? lyricalIntensity : ny, 0, 1)
+  const w = bounds.maxX - bounds.minX || 1;
+  const h = bounds.maxY - bounds.minY || 1;
+  const nx = (x - bounds.minX) / w;
+  const ny = (y - bounds.minY) / h;
+  let t = clamp(Number.isFinite(lyricalIntensity) ? lyricalIntensity : ny, 0, 1);
 
-  const cx = nx - 0.5
-  const cy = ny - 0.5
-  const angle = Math.atan2(cy, cx)
-  const dist = Math.min(1, Math.hypot(cx, cy) * 1.35)
+  const easeInOutCubic = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const tSmooth = easeInOutCubic(t);
 
-  let hue = lerp(230, 2, t)
-  hue += (angle / (2 * Math.PI)) * 55
-  hue += nx * 38 + ny * 42
-  hue += dist * 28
-  hue = ((hue % 360) + 360) % 360
+  const cx = nx - 0.5;
+  const cy = ny - 0.5;
+  const angle = Math.atan2(cy, cx);
+  const dist = Math.min(1, Math.hypot(cx, cy) * 1.35);
 
-  const sat = lerp(58, 100, t)
-  const tw = (hash01(id) - 0.5) * 14
-  const light = lerp(36, 72, 1 - dist * 0.65) + tw
+  let hue = lerp(240, 0, tSmooth);
+  hue += (angle / (2 * Math.PI)) * 35;
+  hue += nx * 20 + ny * 20;
+  hue += dist * 15;
+  hue = ((hue % 360) + 360) % 360;
 
-  const [r, g, b] = hslToRgb(hue, sat / 100, light / 100)
-  return { r, g, b }
+  const sat = lerp(50, 100, tSmooth);
+
+  const tw = (hash01(id) - 0.5) * 8;
+  const light = lerp(45, 68, 1 - dist * 0.55) + tw;
+
+  const [r, g, b] = hslToRgb(hue, sat / 100, light / 100);
+  return { r, g, b };
 }
 
 function computeBounds(points) {
@@ -287,7 +291,7 @@ export default function GalaxyScatter() {
     const before = screenToData(e.clientX, e.clientY)
     const factor = e.deltaY > 0 ? 0.9 : 1.11
     let { scale, tx, ty } = transformRef.current
-    scale = clamp(scale * factor, 0.02, 800)
+    scale = clamp(scale * factor, 0.20, 800)
     tx = mx - before.x * scale
     ty = my - before.y * scale
     transformRef.current = { scale, tx, ty }
@@ -411,7 +415,7 @@ export default function GalaxyScatter() {
           </label>
           <button type="button" className="galaxy-btn" onClick={loadPoints}>Reload</button>
           <button type="button" className="galaxy-btn" onClick={resetView}>Fit</button>
-          <span className="galaxy-zoom">zoom ~{hudZoom}%</span>
+          {/* <span className="galaxy-zoom">zoom ~{hudZoom}%</span> */}
         </div>
         <p className="galaxy-hint">
           Scroll to zoom · drag to pan · red = aggressive lyrics, blue = calm

@@ -136,7 +136,7 @@ export default function HomePage() {
       </section>
 
       {/* Sample tracks */}
-      <section className="sample-tracks">
+      {/*<section className="sample-tracks">
         <h2>Sample Tracks in the Galaxy</h2>
         {tracksErr && <p className="err">Failed to load samples: {tracksErr}</p>}
         {!tracksErr && tracks === null && <p>Loading…</p>}
@@ -163,7 +163,7 @@ export default function HomePage() {
         <button className="btn btn-secondary" onClick={() => navigate('/map')}>
           All Tracks on Map
         </button>
-      </section>
+      </section>*/}
     </div>
   );
 }
