@@ -1,16 +1,36 @@
-# SQLite is stored in ./music-trends-galaxy/backend/data (backend volume).
-# A separate database service is not needed: the data is created by the entrypoint (generate_fake_data.py).
 
 services:
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@postgres:5432/app
+      STORAGE_DIR: /app/storage
     volumes:
       - ./backend/data:/app/data
-      # CSV for seed at startup (populates galaxy_tracks in SQLite)
       - ./storage:/app/storage:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -30,3 +50,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  pgdata:
