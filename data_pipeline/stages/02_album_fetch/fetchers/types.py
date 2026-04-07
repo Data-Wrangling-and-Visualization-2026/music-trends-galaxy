@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal
 import dataclasses
 from PIL import Image
 
@@ -10,6 +10,7 @@ class AlbumSearchResult:
     api_path: str
     image_path: str
     image_source: str
+    found_class: Literal['artist', 'album']
     additional_info: dict
 
 @dataclasses.dataclass
@@ -20,4 +21,5 @@ class AlbumCover:
     image_path: str
     image_source: str
     image: Image.Image
+    found_class: Literal['artist', 'album']
     additional_info: dict

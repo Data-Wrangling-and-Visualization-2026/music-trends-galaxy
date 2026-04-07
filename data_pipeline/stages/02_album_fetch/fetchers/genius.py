@@ -52,6 +52,7 @@ class GeniusFetcher(BaseFetcher):
                 api_path        =       result.get('api_path', None),
                 image_path      =       result.get('cover_art_thumbnail_url', None),
                 image_source    =       'genius',
+                found_class     =       'album',
                 additional_info =       {}
             )
         
@@ -88,6 +89,7 @@ class GeniusFetcher(BaseFetcher):
                 api_path        =       result.get('api_path', None),
                 image_path      =       result.get('image_url', None),
                 image_source    =       'genius-artist',
+                found_class     =       'artist',
                 additional_info =       {}
             )
         
@@ -131,5 +133,6 @@ class GeniusFetcher(BaseFetcher):
             image_path     =       best_result.image_path,
             image_source   =       best_result.image_source,
             image          =       image,
+            found_class    =       best_result.found_class,
             additional_info =      best_result.additional_info
         )
