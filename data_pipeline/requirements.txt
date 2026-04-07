@@ -1,3 +1,6 @@
+# 1) pip install -r requirements-torch.txt   (PyTorch; см. комментарии внутри)
+# 2) pip install -r requirements.txt
+
 asttokens==3.0.1
 beautifulsoup4==4.14.3
 cachetools==7.0.5
@@ -70,3 +73,11 @@ webcolors==25.10.0
 webencodings==0.5.1
 websocket-client==1.9.0
 widgetsnbextension==4.0.15
+umap-learn>=0.5.6
+sentence-transformers>=3.0.0
+hdbscan>=0.8.33
+einops>=0.7.0
+torch
+torchvision
+torchaudio
+requests

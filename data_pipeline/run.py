@@ -235,7 +235,7 @@ def cmd_run(args) -> None:
     for path in stage_paths:
         filename = path.name
         context = DataPipelineContext(ROOT_DIR, filename, config)
-        if limit is not None and "04" in path.name:
+        if limit is not None and ("04" in path.name or "05" in path.name):
             context.limit = limit
         print(f"Running stage: {path.name}")
         # try:
@@ -414,7 +414,12 @@ def main():
             sys.exit(1)
         run_parser = argparse.ArgumentParser()
         run_parser.add_argument("identifiers", nargs="+", help="Stage IDs (e.g. 03 04) or range (01-04)")
-        run_parser.add_argument("--limit", type=int, default=None, help="Max rows for stage 04 (clustering)")
+        run_parser.add_argument(
+            "--limit",
+            type=int,
+            default=None,
+            help="Max rows: stage 04 clustering; stage 05 text_parameters (0 = all, same as 04).",
+        )
         run_parsed, unknown = run_parser.parse_known_args(rest)
         run_args = argparse.Namespace(identifiers=run_parsed.identifiers, limit=run_parsed.limit)
         cmd_run(run_args)

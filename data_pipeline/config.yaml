@@ -1,9 +1,13 @@
 export_folder: export
-input_folder: storage/input
 output_file_name: tracks_features.csv
-# Project root storage (same as Docker mount ./storage) for frontend embeded_data.csv
+# Paths below are relative to data_pipeline/; ../storage is the repo root storage/ (same as Docker ./storage).
 storage_folder: ../storage
+# Dropped-off CSVs and other seeds for the pipeline. `run.py copy input` copies config "input" paths here.
+# Stage 00 (via pipeman INPUT_PATH / negative stage id) reads the initial tracks CSV from this folder.
+input_folder: ../storage/input
 
 02_album_fetch:
-  ouput_folder_name: covers
-  ouput_folder_name_artists: covers/artists
+  output_folder_name: "covers_output"
+  album_covers.db: "album_covers.db"
+  reference_artist.jpg: "refs/artist_ref.jpg"
+  reference_album.jpg: "refs/album_ref.jpg"
