@@ -1,85 +1,121 @@
 #!/usr/bin/env python3
 """
-Stage 2: HDBSCAN clustering of embeddings.
+Stage 2: HDBSCAN clustering of UMAP-reduced vectors (or any fixed-length vectors).
 
-Supports two levels: deep (fine-grained) and wide (coarse).
-Input: .npy embeddings. Output: .npy cluster labels per level.
+One cluster assignment per point (single HDBSCAN run).
+Input: .npy array (N, D) — typically UMAP output from umap_reduce.py.
+Output: .npy cluster labels (integers; -1 = noise).
+
+По умолчанию (без аргументов) читает ``umap_reduced.npy`` и пишет ``labels_cluster.npy``
+в каталоге этого этапа (``04_clustering/``).
 """
 
 import argparse
-import sys
 import pickle
+import sys
 from pathlib import Path
 
-import numpy as np
 import hdbscan
+import numpy as np
+
+_STAGE_DIR = Path(__file__).resolve().parent
+_DEFAULT_UMAP = _STAGE_DIR / "umap_reduced.npy"
+_DEFAULT_LABELS = _STAGE_DIR / "labels_cluster.npy"
+
+
+def print_cluster_track_counts(labels: np.ndarray) -> None:
+    """Print cluster count and number of tracks per label (-1 = noise)."""
+    lab = np.asarray(labels).ravel()
+    uniq, counts = np.unique(lab, return_counts=True)
+    n_clusters = len(uniq) - (1 if -1 in uniq else 0)
+    print(f"Clusters (excluding noise label -1): {n_clusters}")
+    print("Tracks per label:")
+    for u, c in zip(uniq, counts):
+        name = "noise" if int(u) == -1 else str(int(u))
+        print(f"  {name}: {int(c)}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="HDBSCAN clustering of embeddings")
-    parser.add_argument("input_embeddings", type=Path, help="Input .npy embeddings path")
-    parser.add_argument("output_deep", type=Path, help="Output .npy deep cluster labels")
-    parser.add_argument("output_wide", type=Path, help="Output .npy wide cluster labels")
-    parser.add_argument("--input-metadata", type=Path, default=None,
-                        help="Optional .pkl metadata to append clusters to DataFrame")
-    parser.add_argument("--deep-min-cluster-size", type=int, default=50,
-                        help="min_cluster_size for deep clustering")
-    parser.add_argument("--deep-min-samples", type=int, default=15,
-                        help="min_samples for deep clustering")
-    parser.add_argument("--wide-min-cluster-size", type=int, default=500,
-                        help="min_cluster_size for wide clustering")
-    parser.add_argument("--wide-min-samples", type=int, default=100,
-                        help="min_samples for wide clustering")
+    parser = argparse.ArgumentParser(
+        description="HDBSCAN clustering of reduced embeddings",
+        epilog=(
+            "Examples:\n"
+            "  python clustering.py\n"
+            "  python clustering.py path/to/umap_reduced.npy\n"
+            "  python clustering.py in.npy out_labels.npy\n"
+            f"Defaults: input {_DEFAULT_UMAP.name}, output {_DEFAULT_LABELS.name} in {_STAGE_DIR}"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "input_vectors",
+        type=Path,
+        nargs="?",
+        default=_DEFAULT_UMAP,
+        help=f"Input .npy (N, D), e.g. UMAP output (default: {_DEFAULT_UMAP})",
+    )
+    parser.add_argument(
+        "output_labels",
+        type=Path,
+        nargs="?",
+        default=_DEFAULT_LABELS,
+        help=f"Output cluster labels .npy (default: {_DEFAULT_LABELS})",
+    )
+    parser.add_argument(
+        "--input-metadata",
+        type=Path,
+        default=None,
+        help="Optional .pkl metadata to append cluster column to DataFrame",
+    )
+    parser.add_argument(
+        "--min-cluster-size",
+        type=int,
+        default=50,
+        help="HDBSCAN min_cluster_size",
+    )
+    parser.add_argument(
+        "--min-samples",
+        type=int,
+        default=15,
+        help="HDBSCAN min_samples",
+    )
     args = parser.parse_args()
 
-    if not args.input_embeddings.is_file():
-        print(f"Error: file not found: {args.input_embeddings}", file=sys.stderr)
+    if not args.input_vectors.is_file():
+        print(f"Error: file not found: {args.input_vectors}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Loading embeddings from {args.input_embeddings}...")
-    embeddings = np.load(args.input_embeddings)
-    print(f"Embeddings shape: {embeddings.shape}")
+    print(f"Loading vectors from {args.input_vectors}...")
+    embeddings = np.load(args.input_vectors)
+    print(f"Shape: {embeddings.shape}")
 
-    print("Deep clustering (HDBSCAN)...")
-    clusterer_deep = hdbscan.HDBSCAN(
-        min_cluster_size=args.deep_min_cluster_size,
-        min_samples=args.deep_min_samples,
+    print("Clustering (HDBSCAN)...")
+    clusterer = hdbscan.HDBSCAN(
+        min_cluster_size=args.min_cluster_size,
+        min_samples=args.min_samples,
         metric="euclidean",
         gen_min_span_tree=True,
     )
-    labels_deep = clusterer_deep.fit_predict(embeddings)
-    n_clusters_deep = len(set(labels_deep)) - (1 if -1 in labels_deep else 0)
-    print(f"Deep: {n_clusters_deep} clusters, noise: {(labels_deep == -1).sum()}")
+    labels = clusterer.fit_predict(embeddings)
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    print(f"Found {n_clusters} clusters, noise points: {(labels == -1).sum()}")
 
-    print("Wide clustering (HDBSCAN)...")
-    clusterer_wide = hdbscan.HDBSCAN(
-        min_cluster_size=args.wide_min_cluster_size,
-        min_samples=args.wide_min_samples,
-        metric='euclidean',
-        gen_min_span_tree=True
-    )
-    labels_wide = clusterer_wide.fit_predict(embeddings)
-    n_clusters_wide = len(set(labels_wide)) - (1 if -1 in labels_wide else 0)
-    print(f"Wide: {n_clusters_wide} clusters, noise: {(labels_wide == -1).sum()}")
-
-    args.output_deep.parent.mkdir(parents=True, exist_ok=True)
-    np.save(args.output_deep, labels_deep)
-    print(f"Deep labels saved to {args.output_deep}")
-
-    args.output_wide.parent.mkdir(parents=True, exist_ok=True)
-    np.save(args.output_wide, labels_wide)
-    print(f"Wide labels saved to {args.output_wide}")
+    args.output_labels.parent.mkdir(parents=True, exist_ok=True)
+    np.save(args.output_labels, labels)
+    print(f"Labels saved to {args.output_labels}")
 
     if args.input_metadata and args.input_metadata.is_file():
         print(f"Loading metadata from {args.input_metadata}...")
         with open(args.input_metadata, "rb") as f:
             df = pickle.load(f)
-        df["deep_cluster"] = labels_deep
-        df["wide_cluster"] = labels_wide
+        df["cluster"] = labels
         output_meta = args.input_metadata.with_suffix(".with_clusters.pkl")
         with open(output_meta, "wb") as f:
             pickle.dump(df, f)
         print(f"Metadata with clusters saved to {output_meta}")
+
+    print_cluster_track_counts(labels)
+
 
 if __name__ == "__main__":
     main()
