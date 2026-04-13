@@ -252,6 +252,7 @@ ENV/
 backend/data/
 storage/
 *.csv
+*.npy
 *.db
 *.sqlite
 
