@@ -1,45 +1,85 @@
-# Data pipeline
+# Music Trends Galaxy Data Pipeline
 
-Produces `embeded_data.csv` for the frontend galaxy visualization. Storage is at project root `storage/` (same path Docker mounts).
+This folder contains the stage-based ETL pipeline that prepares music data for the Music Trends Galaxy application.
+It fetches and enriches metadata, builds embeddings and clusters, and produces artifacts consumed by the backend and frontend.
 
-## Run pipeline for frontend data
+The pipeline is orchestrated with `run.py`, where each stage lives in `stages/<id>_<name>/main.py`.
 
-From the **project root** (`music-trends-galaxy/`):
+## What this pipeline produces
+
+- Processed datasets in the shared project `storage/` directory
+- Cluster-ready and visualization-ready outputs for the map/galaxy UI
+- Optional analytical artifacts for LLM-based cluster naming and descriptions
+
+## Directory notes
+
+- `stages/`: stage implementations grouped by numeric prefix
+- `refs/`: reference images used by analysis/color-related tasks
+- `config.yaml`: pipeline settings and stage configuration
+- `requirements.txt` and `requirements-torch.txt`: Python dependencies
+
+## Basic usage
+
+Run commands from the `data_pipeline/` directory:
 
 ```bash
 cd data_pipeline
-python run.py run 03 04 --limit 1000
+python run.py list
 ```
 
-Or run stages separately:
+Run one stage:
 
 ```bash
-cd data_pipeline
-python run.py run 03                    # output.csv -> preproccessed.csv
-python run.py run 04 --limit 500        # process 500 tracks (faster for testing)
-python run.py run 04                    # interactive: prompts for max tracks, default 1000
-python run.py run 04 --limit 0          # process all tracks (may take hours for 80k+)
+python run.py run 04
 ```
 
-## Requirements
+Run multiple stages by identifiers:
 
-1. **Stage 03** needs `storage/output.csv` (from earlier stages: lyric fetch, etc.).
-2. **Stage 04** needs extra packages:
-   ```bash
-   pip install sentence-transformers hdbscan scikit-learn tqdm
-   ```
-   First run downloads the embedding model (~90MB); later runs reuse the cache.
+```bash
+python run.py run 02 04 05
+```
 
-## Data flow
+Run a numeric range:
 
-| Stage | Input | Output |
-|-------|-------|--------|
-| 03    | `storage/output.csv` | `storage/preproccessed.csv` |
-| 04    | `storage/preproccessed.csv` | `storage/embeded_data.csv` |
+```bash
+python run.py run 02-05
+```
 
-After running, start Docker and open the frontend:
+Use optional arguments (if supported by selected stages), for example:
+
+```bash
+python run.py run 04 --limit 500
+```
+
+## Environment and dependencies
+
+Install base dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+For embedding and model-heavy workflows, also install:
+
+```bash
+pip install -r requirements-torch.txt
+```
+
+Some stages may download models on first run. Keep enough disk space for cached model files and generated artifacts.
+
+## Storage and outputs
+
+The pipeline uses the project-level `storage/` folder (`../storage` from this directory), which is shared with Docker services.
+Large intermediate artifacts are expected during clustering and analysis stages.
+
+To avoid committing generated binaries, keep artifact patterns in `.gitignore` up to date.
+
+## Running with the full project
+
+After generating data, you can run the application stack from the repository root:
 
 ```bash
 docker compose up --build
-# http://localhost:3000/map
 ```
+
+Then open the frontend map/galaxy pages to validate the generated dataset.
