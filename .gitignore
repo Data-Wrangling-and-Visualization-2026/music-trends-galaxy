@@ -253,6 +253,8 @@ backend/data/
 storage/
 *.csv
 *.npy
+data_pipeline/stages/04_clustering/embeddings.npy
+data_pipeline/stages/04_clustering/metadata.pkl
 *.db
 *.sqlite
 
