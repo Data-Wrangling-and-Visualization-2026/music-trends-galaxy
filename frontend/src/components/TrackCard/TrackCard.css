@@ -1,0 +1,102 @@
+.track-card {
+    position: absolute;
+    top: 90px; 
+    right: 30px;
+    width: 320px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    background: rgba(10, 10, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    backdrop-filter: blur(15px);
+    z-index: 100;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: slideInCard 0.3s ease-out;
+  }
+
+  .track-card-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none; 
+    border: none; 
+    color: #aaaaaa; 
+    cursor: pointer; 
+    font-size: 0.9rem; 
+    padding: 0; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+  }
+
+  .track-card-close:hower {
+    transform: scale(1.1) rotate(90deg);
+    color: #ddd;
+  }
+
+  @keyframes slideInCard {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  .track-title { font-size: 1.4rem; margin: 0; }
+  .track-artist { color: #aaa; margin: 5px 0; }
+  .track-album { font-size: 0.8rem; color: #666; text-transform: uppercase; }
+  
+  .track-section h3 {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    margin-top: 20px;
+  }
+  
+  .track-lyrics {
+    font-style: italic;
+    color: #ddd;
+    line-height: 1.4;
+    font-size: 0.95rem;
+  }
+  
+  .feature-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 0.8rem;
+  }
+  
+  .bar-bg {
+    width: 150px;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  .bar-fill {
+    height: 100%;
+    background: #fff;
+    transition: width 0.5s ease-out;
+  }
+  
+  .detail-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    font-weight: bold;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .detail-btn:hover { transform: scale(1.02); }
